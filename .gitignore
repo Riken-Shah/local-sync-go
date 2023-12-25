@@ -1,0 +1,11 @@
+# Local folder contains thumbnail and db
+.local/*
+
+# Temp
+thumbnail/*
+
+
+# pycharm
+.idea
+.DS_Store
+
