@@ -17,10 +17,10 @@ func CreateCollectionIfNotExists(syncID string) error {
 	if err := utils.DBClient.DBClient.CreateCollection(syncID); err != nil {
 		return err
 	}
-	//err := utils.DBClient.DBClient.CreateIndex(syncID, string(FilePath))
-	//if err != nil {
-	//	return err
-	//}
+	err := utils.DBClient.DBClient.CreateIndex(syncID, string(FilePath))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

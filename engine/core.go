@@ -5,6 +5,7 @@ import (
 	"SyncEngine/models/file"
 	"SyncEngine/models/syncs"
 	"log"
+	"path/filepath"
 )
 
 var SyncProcess = syncs.Sync{}
@@ -42,7 +43,8 @@ func BeginOrResume(rootFilePath string) error {
 		ProcessDirs(rootFilePath, SyncProcess.ID, filePathsExits)
 		log.Println("------- Processing Dirs Completed --------")
 		log.Println("------- Generate Thumbnails --------")
-		err := GenerateThumbnails(SyncProcess.ID, ".local/thumbnails")
+		thumbnailPath := filepath.Join(".local", "thumbnails")
+		err := GenerateThumbnails(SyncProcess.ID, thumbnailPath)
 		if err != nil {
 			return err
 		}

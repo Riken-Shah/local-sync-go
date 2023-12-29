@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 )
 
-var logfilePath = ".local/logs/"
+var logfilePath = filepath.Join(".local", "logs")
 
 func main() {
 	//utils.SetupLogs()
@@ -17,7 +18,7 @@ func main() {
 	if err != nil {
 
 	}
-	logfilePath += time.Now().Format("2006-01-02T15:04:05") + ".log"
+	logfilePath = filepath.Join(logfilePath, time.Now().Format("2006-01-02T15 05 05")+".log")
 	fmt.Println("logfilepath", logfilePath)
 	logFile, err := os.OpenFile(logfilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {

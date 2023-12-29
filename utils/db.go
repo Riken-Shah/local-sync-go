@@ -4,6 +4,7 @@ import (
 	cloverdb "github.com/ostafen/clover/v2"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -12,7 +13,7 @@ type DBHandler struct {
 }
 
 var dbOnce sync.Once
-var dbPath = ".local/db"
+var dbPath = filepath.Join(".local", "db")
 var DBClient DBHandler
 
 func init() {

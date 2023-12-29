@@ -42,9 +42,9 @@ func CreateSyncProcessIfNotExists(filePath string) (Sync, error) {
 			sync.ID = doc.ObjectId()
 
 		} else if len(docs) == 1 {
-			if docs[0].Get(string(FilePath)) != filePath {
-				return sync, errors.New("file path has been changed, this case is not handled yet")
-			}
+			//if docs[0].Get(string(FilePath)) != filePath {
+			//	return sync, errors.New("file path has been changed, this case is not handled yet")
+			//}
 
 			sync.ID = docs[0].ObjectId()
 			sync.FilePath = docs[0].Get(string(FilePath)).(string)

@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 type Result struct {
@@ -32,7 +33,7 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 
 	var savedFpaths []string
 
-	for i, fpath := range fpaths {
+	for _, fpath := range fpaths {
 		file, err := os.Open(fpath)
 		if fpath == "" {
 			continue
@@ -85,20 +86,15 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 
 		// Send success result
 		resultChan <- Result{SavePath: outputPath, Errors: nil, SrcPath: fpath}
-
-		if i%10000 == 0 {
-			go func(i int) {
-				if err := utils.DBClient.DBClient.Update(query.NewQuery(collectionName).Where(query.Field(string(f2.FilePath)).In(fpaths)), map[string]interface {
-				}{
-					string(f2.ThumbnailGenerated): true,
-					//string(f2.ThumbnailPath):      outputPath,
-				}); err != nil {
-					log.Printf("Something went wrong while updating thubmnail: %v, err: %v", fpaths, err)
-				}
-				fpaths = []string{}
-				log.Println("dumped 1000 thumbnails")
-			}(i)
-		}
+		go func(fpath, outPath string) {
+			if err := utils.DBClient.DBClient.Update(query.NewQuery(collectionName).Where(query.Field(string(f2.FilePath)).Eq(fpath)), map[string]interface {
+			}{
+				string(f2.ThumbnailGenerated): true,
+				string(f2.ThumbnailPath):      outputPath,
+			}); err != nil {
+				log.Printf("Something went wrong while updating thubmnail: %v, err: %v", fpaths, err)
+			}
+		}(fpath, outputPath)
 	}
 
 	//// Send success result
@@ -123,7 +119,7 @@ func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 		}
 
 		// Set the number of workers (goroutines)
-		numWorkers := 20
+		numWorkers := 100
 
 		log.Printf("Total %d files found for thumbnail generation\n", len(filePaths))
 
@@ -160,6 +156,7 @@ func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 		// Print results
 
 		i := 0
+		st := time.Now()
 		for result := range resultChan {
 			if len(result.Errors) > 0 {
 				for _, err := range result.Errors {
@@ -168,10 +165,12 @@ func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 			} else {
 				i += 1
 				fmt.Printf("saved %d thumbnails\n", i)
-				//if i%1000 == 0 {
-				//	log.Println("generated 1000 thumbnails")
-				//	i = 0
-				//}
+				if i%1000 == 0 {
+					msg := fmt.Sprintf("generated 1000 thumbnails in %v, total: %d", time.Since(st), i)
+					fmt.Println(msg)
+					log.Println(msg)
+					st = time.Now()
+				}
 			}
 		}
 		log.Println("Total file saved", i)
