@@ -86,15 +86,15 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 
 		// Send success result
 		resultChan <- Result{SavePath: outputPath, Errors: nil, SrcPath: fpath}
-		go func(fpath, outPath string) {
-			if err := utils.DBClient.DBClient.Update(query.NewQuery(collectionName).Where(query.Field(string(f2.FilePath)).Eq(fpath)), map[string]interface {
-			}{
-				string(f2.ThumbnailGenerated): true,
-				string(f2.ThumbnailPath):      outputPath,
-			}); err != nil {
-				log.Printf("Something went wrong while updating thubmnail: %v, err: %v", fpaths, err)
-			}
-		}(fpath, outputPath)
+		//go func(fpath, outPath string) {
+		if err := utils.DBClient.DBClient.Update(query.NewQuery(collectionName).Where(query.Field(string(f2.FilePath)).Eq(fpath)), map[string]interface {
+		}{
+			string(f2.ThumbnailGenerated): true,
+			string(f2.ThumbnailPath):      outputPath,
+		}); err != nil {
+			log.Printf("Something went wrong while updating thubmnail: %v, err: %v", fpaths, err)
+		}
+		//}(fpath, outputPath)
 	}
 
 	//// Send success result

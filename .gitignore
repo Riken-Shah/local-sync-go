@@ -1,9 +1,10 @@
 # Local folder contains thumbnail and db
 .local/*
+# Modal cache
+.cache
 
-# Temp
-thumbnail/*
-
+# Config File
+config.ini
 
 # pycharm
 .idea

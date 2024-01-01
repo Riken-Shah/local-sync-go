@@ -52,6 +52,7 @@ func InsertMany(syncID string, files []Dir) error {
 
 func FetchAll(syncID string) ([]*document2.Document, error) {
 	syncID += "-dir"
+	//return []*document2.Document{}, nil
 
 	if documents, err := utils.DBClient.DBClient.FindAll(query.NewQuery(syncID)); err != nil {
 		return nil, err

@@ -49,9 +49,20 @@ func CreateSyncProcessIfNotExists(filePath string) (Sync, error) {
 			sync.ID = docs[0].ObjectId()
 			sync.FilePath = docs[0].Get(string(FilePath)).(string)
 			sync.LastSyncedOn = docs[0].Get(string(LastSyncedOn)).(int64)
+			sync.DirScanned = docs[0].Get(string(DirScanned)).(bool)
 		} else {
 			return sync, errors.New("more than one syncs found in syncs collection")
 		}
 	}
 	return sync, nil
+}
+
+func DirScannedCompleted(syncID string) error {
+	if err := utils.DBClient.DBClient.UpdateById(collectionName, syncID, func(doc *document2.Document) *document2.Document {
+		doc.Set(string(DirScanned), true)
+		return doc
+	}); err != nil {
+		return err
+	}
+	return nil
 }
