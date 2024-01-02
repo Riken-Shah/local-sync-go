@@ -2,7 +2,6 @@ package engine
 
 import (
 	f2 "SyncEngine/models/file"
-	"SyncEngine/utils"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -56,13 +55,13 @@ func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvu
 			return err
 		}
 
-		for _, doc := range documents {
-			doc.Set(string(f2.SyncedToVectorDB), true)
-			err := utils.DBClient.DBClient.Save(syncID, doc)
-			if err != nil {
-				return err
-			}
-		}
+		//for _, doc := range documents {
+		//	doc.Set(string(f2.SyncedToVectorDB), true)
+		//	err := utils.DBClient.DBClient.Save(syncID, doc)
+		//	if err != nil {
+		//		return err
+		//	}
+		//}
 
 		log.Printf("dumped %d files to milvus\n", len(documents))
 

@@ -1,10 +1,10 @@
 package syncs
 
 type Sync struct {
-	ID           string `clover:"id"`
-	FilePath     string `clover:"file_path"`
-	LastSyncedOn int64  `clover:"last_synced_on"`
-	DirScanned   bool   `clover:"dir_scanned"`
+	ID           string `db:"id"`
+	FilePath     string `db:"file_path"`
+	LastSyncedOn int64  `db:"last_synced_on"`
+	DirScanned   bool   `db:"dir_scanned"`
 }
 
 type Column string

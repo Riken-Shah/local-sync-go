@@ -4,7 +4,6 @@ import (
 	f2 "SyncEngine/models/file"
 	"SyncEngine/utils"
 	"fmt"
-	"github.com/ostafen/clover/v2/query"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "image/png"
@@ -60,17 +59,18 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 
 	fmt.Println("total time: ", time.Since(st))
 
-	fpathsI := []interface{}{}
-	for _, fpath := range fpaths {
-		fpathsI = append(fpathsI, fpath)
+	//if err := utils.DBClient.DBClient.Update(query.NewQuery(collectionName).Where(query.Field(string(f2.FilePath)).In(fpathsI...)), map[string]interface {
+	//}{
+	//	string(f2.ThumbnailGenerated): true,
+	//	string(f2.ThumbnailPath):      thumbnailPath,
+	//}); err != nil {
+	//	log.Printf("Something went wrong while updating thubmnail: %v, err: %v", fpaths, err)
+	//}
 
-	}
-	if err := utils.DBClient.DBClient.Update(query.NewQuery(collectionName).Where(query.Field(string(f2.FilePath)).In(fpathsI...)), map[string]interface {
-	}{
-		string(f2.ThumbnailGenerated): true,
-		string(f2.ThumbnailPath):      thumbnailPath,
-	}); err != nil {
-		log.Printf("Something went wrong while updating thubmnail: %v, err: %v", fpaths, err)
+	err = f2.ThumbnailGeneratedCompleted(fpaths)
+	if err != nil {
+		log.Println("err saving generated thumbnail, err: ", err)
+		return
 	}
 
 	//
@@ -151,13 +151,13 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 	defer utils.Timer("thumbnail")()
 
-	if fileDocs, err := f2.FetchAllForGeneratingThumbnails(collectionName); err != nil {
+	if filePaths, err := f2.FetchAllForGeneratingThumbnails(collectionName); err != nil {
 		return err
 	} else {
-		filePaths := make([]string, 0)
-		for _, doc := range fileDocs {
-			filePaths = append(filePaths, doc.Get(string(f2.FilePath)).(string))
-		}
+		//filePaths := make([]string, 0)
+		//for _, doc := range fileDocs {
+		//	filePaths = append(filePaths, doc.FilePath)
+		//}
 
 		// Set the number of workers (goroutines)
 		//numWorkers := 100

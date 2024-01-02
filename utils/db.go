@@ -1,7 +1,7 @@
 package utils
 
 import (
-	cloverdb "github.com/ostafen/clover/v2"
+	"database/sql"
 	"log"
 	"os"
 	"path/filepath"
@@ -9,11 +9,11 @@ import (
 )
 
 type DBHandler struct {
-	DBClient *cloverdb.DB
+	DBClient *sql.DB
 }
 
 var dbOnce sync.Once
-var dbPath = filepath.Join(".local", "db2")
+var dbPath = filepath.Join(".local", "db3")
 var DBClient DBHandler
 
 func init() {
@@ -23,26 +23,18 @@ func init() {
 		if err != nil {
 			log.Println("Error creating dir: ", err)
 		}
-		dbClientInst, err := cloverdb.Open(dbPath)
+		//dbClientInst, err := cloverdb.Open(dbPath)
+		//if err != nil {
+		//	log.Fatal("Error opening CloverDB:", err)
+		//	return
+		//}
+
+		dbClientInst, err := sql.Open("sqlite3", filepath.Join(dbPath, "foo.db"))
 		if err != nil {
-			log.Fatal("Error opening CloverDB:", err)
-			return
+			log.Fatal(err)
 		}
+
 		log.Println("DBClient connection established")
 		DBClient.DBClient = dbClientInst
 	})
-}
-
-func (db *DBHandler) RecreateCollection(collectionName string) error {
-	if found, err := db.DBClient.HasCollection(collectionName); err == nil && found {
-		if err := db.DBClient.DropCollection(collectionName); err != nil {
-			return err
-		} else if err != nil {
-			return err
-		}
-	}
-	if err := db.DBClient.CreateCollection(collectionName); err != nil {
-		return err
-	}
-	return nil
 }

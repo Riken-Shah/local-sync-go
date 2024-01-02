@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	maxSliceLength      = 10000
+	maxSliceLength      = 1000
 	filePaths           []file.File
 	newDirsTravelled    []dir.Dir
 	dirAlreadyTravelled map[string]bool
@@ -96,10 +96,14 @@ func dumpToCloverDB() {
 	defer mutex.Unlock()
 
 	//// Insert file paths into CloverDB
-	file.InsertMany(collectionName, filePaths)
-	dir.InsertMany(collectionName, newDirsTravelled)
+	err := file.InsertMany(collectionName, filePaths)
+	if err != nil {
+		log.Printf("err insersting recrods: %v", err)
+		return
+	}
+	//dir.InsertMany(collectionName, newDirsTravelled)
 
-	log.Printf("Flushed files %d to %s\n", len(filePaths), collectionName)
+	log.Printf("Flushed files %d to files\n", len(filePaths))
 
 	// Clear the slice
 	filePaths = nil

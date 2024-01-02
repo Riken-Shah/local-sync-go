@@ -2,74 +2,105 @@ package file
 
 import (
 	"SyncEngine/utils"
-	"errors"
-	document2 "github.com/ostafen/clover/v2/document"
-	"github.com/ostafen/clover/v2/query"
-	"log"
+	"fmt"
+	"strings"
 )
 
 func CreateCollectionIfNotExists(syncID string) error {
-	if hasCollection, err := utils.DBClient.DBClient.HasCollection(syncID); err != nil {
-		return err
-	} else if hasCollection {
-		return nil
+	// Parameterized query for creating the table
+	createTableQuery := `
+		CREATE TABLE IF NOT EXISTS files (
+			file_path TEXT,
+			last_synced INTEGER,
+			thumbnail_generated INTEGER DEFAULT 0,
+			thumbnail_path TEXT,
+			synced_to_vector_db INTEGER DEFAULT 0
+		);`
+
+	// Execute the parameterized query
+	if _, err := utils.DBClient.DBClient.Exec(createTableQuery); err != nil {
+		return fmt.Errorf("error creating table: %v", err)
 	}
 
-	if err := utils.DBClient.DBClient.CreateCollection(syncID); err != nil {
-		return err
+	// Print the SQL statement
+	fmt.Println("Create table SQL:", createTableQuery)
+
+	// Create an index for FilePath
+	indexQuery := `CREATE INDEX IF NOT EXISTS idx_file_path ON files (file_path);`
+	if _, err := utils.DBClient.DBClient.Exec(indexQuery); err != nil {
+		return fmt.Errorf("error creating index: %v", err)
 	}
-	err := utils.DBClient.DBClient.CreateIndex(syncID, string(FilePath))
-	if err != nil {
-		return err
-	}
+
+	// Print the index creation SQL statement
+	fmt.Println("Create index SQL:", indexQuery)
+
 	return nil
 }
-
-func toDocuments(files []File) ([]*document2.Document, error) {
-	var docs = make([]*document2.Document, len(files))
-	for index, file := range files {
-		if doc := document2.NewDocumentOf(file); doc == nil {
-			return docs, errors.New("unable to parse to document")
-		} else {
-			docs[index] = doc
-		}
-	}
-	return docs, nil
-}
-
 func InsertMany(syncID string, files []File) error {
-	if docs, err := toDocuments(files); err != nil {
-		return err
-	} else {
-		if err := utils.DBClient.DBClient.Insert(syncID, docs...); err != nil {
-			return err
+	// Prepare the SQL query
+	query := `INSERT INTO files (file_path, last_synced, thumbnail_generated, thumbnail_path, synced_to_vector_db) VALUES `
+	values := []interface{}{}
+
+	for _, file := range files {
+		query += "(?, ?, ?, ?, ?),"
+		values = append(values, file.FilePath, file.LastSynced, file.ThumbnailGenerated, file.ThumbnailPath, file.SyncedToVectorDB)
+	}
+
+	// Trim the trailing comma
+	query = query[:len(query)-1]
+
+	// Execute the query
+	_, err := utils.DBClient.DBClient.Exec(query, values...)
+	return err
+}
+
+func FetchAllForGeneratingThumbnails(syncID string) ([]string, error) {
+	q := `SELECT (file_path) FROM files  WHERE ` + string(ThumbnailGenerated) + ` = false;`
+	fmt.Println(q)
+	rows, err := utils.DBClient.DBClient.Query(q)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []string
+	index := 0
+	for rows.Next() {
+		//var file File
+		var file string
+		err := rows.Scan(&file)
+		files = append(files, file)
+		index++
+		if err != nil {
+			return nil, err
 		}
+		//files = append(files, file)
 	}
-	return nil
+
+	return files, nil
 }
 
-func FetchAll(syncID string) ([]*document2.Document, error) {
-	if documents, err := utils.DBClient.DBClient.FindAll(query.NewQuery(syncID)); err != nil {
-		return nil, err
-	} else {
-		return documents, err
-	}
-}
+func FetchAllForGeneratingEmbedding(syncID string, skip, limit int) ([]File, error) {
+	q := `SELECT * FROM files  WHERE ` + string(SyncedToVectorDB) + ` = false;`
+	rows, err := utils.DBClient.DBClient.Query(q)
 
-func FetchAllForGeneratingThumbnails(syncID string) ([]*document2.Document, error) {
-	if documents, err := utils.DBClient.DBClient.FindAll(query.NewQuery(syncID).Where(query.Field(string(ThumbnailGenerated)).Eq(false))); err != nil {
+	if err != nil {
 		return nil, err
-	} else {
-		return documents, err
 	}
-}
+	defer rows.Close()
 
-func FetchAllForGeneratingEmbedding(syncID string, skip, limit int) ([]*document2.Document, error) {
-	if documents, err := utils.DBClient.DBClient.FindAll(query.NewQuery(syncID).Where(query.Field(string(SyncedToVectorDB)).Eq(false)).Skip(skip).Limit(limit)); err != nil {
-		return nil, err
-	} else {
-		return documents, err
+	var files []File
+	for rows.Next() {
+		var file File
+		err := rows.Scan(&file.FilePath, &file.LastSynced, &file.ThumbnailGenerated, &file.ThumbnailPath, &file.SyncedToVectorDB)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, file)
 	}
+
+	return files, nil
 }
 
 type Row struct {
@@ -77,32 +108,28 @@ type Row struct {
 	Metadata      map[string]interface{} `json:"metadata"`
 }
 
-func DocumentsToRow(documents []*document2.Document) []Row {
+func DocumentsToRow(files []File) []Row {
 	var rows = make([]Row, 0)
-	for _, doc := range documents {
-		filePath, ok := doc.Get(string(FilePath)).(string)
-		if !ok {
-			log.Println("err converting to row: (filePath) ", doc.AsMap())
-			continue
+	for _, file := range files {
+		row := Row{
+			ThumbnailPath: file.ThumbnailPath,
+			Metadata: map[string]interface{}{
+				string(LastSynced): file.LastSynced,
+				string(FilePath):   file.FilePath,
+			},
 		}
-		lastSynced, ok := doc.Get(string(LastSynced)).(int64)
-		if !ok {
-			log.Println("err converting to row: (lastSynced)", doc.AsMap())
-			continue
-		}
-		thumbnailPath, ok := doc.Get(string(ThumbnailPath)).(string)
-		if !ok {
-			log.Println("err converting to row:(thumbnailPath) ", doc.AsMap())
-			continue
-		}
-		row := Row{}
-		row.ThumbnailPath = thumbnailPath
-		row.Metadata = map[string]interface{}{
-			string(LastSynced): lastSynced,
-			string(FilePath):   filePath,
-		}
-
 		rows = append(rows, row)
 	}
 	return rows
+}
+
+func ThumbnailGeneratedCompleted(filePaths []string) error {
+
+	args := make([]interface{}, len(filePaths))
+	for i, v := range filePaths {
+		args[i] = v
+	}
+
+	_, err := utils.DBClient.DBClient.Exec(`UPDATE files SET thumbnail_generated = 1 WHERE file_path IN (?`+strings.Repeat(", ?", len(args)-1)+`)`, args...)
+	return err
 }

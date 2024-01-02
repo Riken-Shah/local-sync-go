@@ -4,12 +4,14 @@ import (
 	"SyncEngine/models/dir"
 	"SyncEngine/models/file"
 	"SyncEngine/models/syncs"
+	"fmt"
 	ini "gopkg.in/ini.v1"
 	"log"
 	"path/filepath"
 )
 
 var SyncProcess = syncs.Sync{}
+var SyncProcessID = ""
 
 func Init(rootFilePath string) error {
 	if err := syncs.CreateCollectionIfNotExists(); err != nil {
@@ -20,6 +22,7 @@ func Init(rootFilePath string) error {
 		return err
 	} else {
 		SyncProcess = sync
+		SyncProcessID = fmt.Sprintf("%d", sync.ID)
 	}
 	return nil
 }
@@ -41,15 +44,16 @@ func BeginOrResume(rootFilePath string) error {
 	milvusPassword := milvus.Key("password").String()
 	collectionMName := milvus.Key("collection").String()
 
-	if err := file.CreateCollectionIfNotExists(SyncProcess.ID); err != nil {
+	if err := file.CreateCollectionIfNotExists(SyncProcessID); err != nil {
+		log.Printf("err in CreateCollectionIfNotExists")
 		return err
 	}
-	if err := dir.CreateCollectionIfNotExists(SyncProcess.ID); err != nil {
-		return err
-	}
+	//if err := dir.CreateCollectionIfNotExists(SyncProcessID); err != nil {
+	//	return err
+	//}
 
 	if !SyncProcess.DirScanned {
-		if files, err := dir.FetchAll(SyncProcess.ID); err != nil {
+		if files, err := dir.FetchAll(SyncProcessID); err != nil {
 			return err
 		} else {
 			filePathsExits := map[string]bool{}
@@ -58,7 +62,7 @@ func BeginOrResume(rootFilePath string) error {
 
 			}
 			log.Println("------- Processing Dirs --------")
-			ProcessDirs(rootFilePath, SyncProcess.ID, filePathsExits, false)
+			ProcessDirs(rootFilePath, SyncProcessID, filePathsExits, false)
 			log.Println("------- Processing Dirs Completed --------")
 			err := syncs.DirScannedCompleted(SyncProcess.ID)
 			if err != nil {
@@ -68,14 +72,15 @@ func BeginOrResume(rootFilePath string) error {
 	}
 	log.Println("------- Generate Thumbnails --------")
 	thumbnailPath := filepath.Join(".local", "thumbnails2")
-	err = GenerateThumbnails(SyncProcess.ID, thumbnailPath)
+	err = GenerateThumbnails(SyncProcessID, thumbnailPath)
 	if err != nil {
+		log.Printf("err in thumbnail generations: %v", err)
 		return err
 	}
 	log.Println("------- Generate Thumbnails Completed --------")
 	log.Println("------- Generate Embeddings --------")
 	cacheFolder := filepath.Join(".cache")
-	err = GenerateEmbeddings(SyncProcess.ID, collectionMName, milvusUri, milvusUsername, milvusPassword, cacheFolder)
+	err = GenerateEmbeddings(SyncProcessID, collectionMName, milvusUri, milvusUsername, milvusPassword, cacheFolder)
 	if err != nil {
 		return err
 	}
