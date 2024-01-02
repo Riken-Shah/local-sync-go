@@ -18,6 +18,8 @@ var (
 	dirAlreadyTravelled map[string]bool
 	mutex               sync.Mutex
 	collectionName      = "p0"
+	fileExtMap          = make(map[string]int, 0)
+	infoFileTypes       = false
 )
 
 func isSymlink(info os.FileInfo) bool {
@@ -27,8 +29,10 @@ func isSymlink(info os.FileInfo) bool {
 func processFile(filePath string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
+	ext := strings.ToLower(filepath.Ext(filePath))
+
 	// Check file extensions here
-	if strings.HasSuffix(filePath, ".png") || strings.HasSuffix(filePath, ".tiff") || strings.HasSuffix(filePath, ".jpg") || strings.HasSuffix(filePath, ".jpeg") {
+	if strings.HasPrefix(ext, ".png") || strings.HasPrefix(ext, ".jpg") || strings.HasPrefix(ext, ".jpeg") || strings.HasPrefix(ext, ".tif") {
 		// Add the f path to the slice
 		mutex.Lock()
 		f := file.File{}
@@ -72,6 +76,14 @@ func walkDir(rootDir string, wg *sync.WaitGroup) {
 			d.Path = path
 			newDirsTravelled = append(newDirsTravelled, d)
 			dirAlreadyTravelled[path] = true
+			ext := filepath.Ext(path)
+			if infoFileTypes {
+				if val, ok := fileExtMap[ext]; ok {
+					fileExtMap[ext] = val + 1
+				} else {
+					fileExtMap[ext] = 0
+				}
+			}
 			mutex.Unlock()
 		}
 
@@ -92,11 +104,21 @@ func dumpToCloverDB() {
 	// Clear the slice
 	filePaths = nil
 	newDirsTravelled = []dir.Dir{}
+	if infoFileTypes {
+		printFileExtInfo()
+	}
 }
 
-func ProcessDirs(rootFilePath, collection string, filePathsSynced map[string]bool) {
+func printFileExtInfo() {
+	for key, val := range fileExtMap {
+		log.Printf("%s : %v\n", key, val)
+	}
+}
+
+func ProcessDirs(rootFilePath, collection string, filePathsSynced map[string]bool, infoFileType bool) {
 	collectionName = collection
 	dirAlreadyTravelled = filePathsSynced
+	infoFileTypes = infoFileType
 	defer utils.Timer("process dir")()
 	var wg sync.WaitGroup
 	// Start the recursive file processing
@@ -108,4 +130,8 @@ func ProcessDirs(rootFilePath, collection string, filePathsSynced map[string]boo
 
 	// Dump any remaining file paths to CloverDB
 	dumpToCloverDB()
+
+	if infoFileTypes {
+		printFileExtInfo()
+	}
 }

@@ -58,7 +58,7 @@ func BeginOrResume(rootFilePath string) error {
 
 			}
 			log.Println("------- Processing Dirs --------")
-			ProcessDirs(rootFilePath, SyncProcess.ID, filePathsExits)
+			ProcessDirs(rootFilePath, SyncProcess.ID, filePathsExits, false)
 			log.Println("------- Processing Dirs Completed --------")
 			err := syncs.DirScannedCompleted(SyncProcess.ID)
 			if err != nil {
