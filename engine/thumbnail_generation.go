@@ -21,6 +21,9 @@ type Result struct {
 	Errors   []error
 }
 
+var lock sync.Mutex
+var totalSize int64
+
 func generateThumbnail(collectionName string, fpaths []string, thumbnailPath string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -34,7 +37,7 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 	}
 	outpath := filepath.Join(mydir, thumbnailPath, "%s.jpeg")
 	//fmt.Println("outpath", outpath)
-	args = append(args, []string{"--size", "512x512", "-o", outpath, "--vips-concurrency", "8"}...)
+	args = append(args, []string{"--size", "512x512", "-o", outpath}...)
 	cmd := exec.Command("vipsthumbnail", args...)
 	//var stdoutBuf, stderrBuf bytes.Buffer
 
@@ -73,8 +76,15 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 		return
 	}
 
-	//
-	//for _, fpath := range fpaths {
+	for _, fpath := range fpaths {
+		fi, err := os.Stat(fpath)
+		if err != nil {
+			continue
+		}
+		lock.Lock()
+		totalSize = totalSize + fi.Size()
+		lock.Unlock()
+	}
 	//	//file, err := os.Open(fpath)
 	//	//if fpath == "" {
 	//	//	continue
@@ -186,12 +196,13 @@ func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 		//	}
 		//	go generateThumbnail(collectionName, filePaths[i:end], thumbnailPath, resultChan, &wg)
 		//}
-		chunkSize := 1000
+		chunkSize := 5
 		maxChunks := 10 * chunkSize
 		for i := 0; i < len(filePaths); i += chunkSize {
 			if i%maxChunks == 0 && i > 0 {
-				fmt.Println("wating 5555")
 				wg.Wait()
+				log.Printf("%d files added, total: %d GiB: %v\n", maxChunks, i, totalSize/1e9)
+				log.Printf("%d files added, total: %d GiB: %v\n", maxChunks, i, totalSize/1e9)
 				wg = sync.WaitGroup{}
 			}
 			wg.Add(1)
