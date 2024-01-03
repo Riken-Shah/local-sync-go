@@ -4,8 +4,6 @@ import (
 	f2 "SyncEngine/models/file"
 	"SyncEngine/utils"
 	"fmt"
-	_ "golang.org/x/image/bmp"
-	_ "golang.org/x/image/tiff"
 	_ "image/png"
 	"log"
 	"os"
@@ -13,6 +11,9 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
 )
 
 type Result struct {
@@ -43,8 +44,8 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 
 	//cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 	//cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
-	fmt.Println("starting the commdn")
-	st := time.Now()
+	// fmt.Println("starting the commdn")
+	// st := time.Now()
 	if _, err := cmd.CombinedOutput(); err != nil {
 		log.Printf("err in running", err)
 		return
@@ -60,7 +61,7 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 	//	return
 	//}
 
-	fmt.Println("total time: ", time.Since(st))
+	// fmt.Println("total time: ", time.Since(st))
 
 	//if err := utils.DBClient.DBClient.Update(query.NewQuery(collectionName).Where(query.Field(string(f2.FilePath)).In(fpathsI...)), map[string]interface {
 	//}{
@@ -198,12 +199,19 @@ func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 		//}
 		chunkSize := 5
 		maxChunks := 10 * chunkSize
-		for i := 0; i < len(filePaths); i += chunkSize {
+		var lastGB int64
+		st := time.Now()
+		for i := 250; i < len(filePaths); i += chunkSize {
 			if i%maxChunks == 0 && i > 0 {
+
 				wg.Wait()
-				log.Printf("%d files added, total: %d GiB: %v\n", maxChunks, i, totalSize/1e9)
-				log.Printf("%d files added, total: %d GiB: %v\n", maxChunks, i, totalSize/1e9)
+				totalGbProccessed := totalSize / 1e9
+				timeSince := time.Since(st)
+				log.Printf("total: %d; time: %v ;AVG one: %v ;Gib: %v ; Total GiB: %v\n", i, timeSince, timeSince/time.Duration(maxChunks), totalGbProccessed-lastGB, totalSize/1e9)
+				fmt.Printf("total: %d; time: %v; AVG one: %v ;Gib: %v ; Total GiB: %v\n", i, timeSince, timeSince/time.Duration(maxChunks), totalGbProccessed-lastGB, totalSize/1e9)
+				st = time.Now()
 				wg = sync.WaitGroup{}
+				lastGB = totalGbProccessed
 			}
 			wg.Add(1)
 			end := i + chunkSize
