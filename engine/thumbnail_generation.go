@@ -38,7 +38,7 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 	}
 	outpath := filepath.Join(mydir, thumbnailPath, "%s.jpeg")
 	//fmt.Println("outpath", outpath)
-	args = append(args, []string{"--size", "512x512", "-o", outpath}...)
+	args = append(args, []string{"--size", "512x512", "-o", outpath, "--vips-concurrency", "1"}...)
 	cmd := exec.Command("vipsthumbnail", args...)
 	//var stdoutBuf, stderrBuf bytes.Buffer
 
@@ -46,8 +46,8 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 	//cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 	// fmt.Println("starting the commdn")
 	// st := time.Now()
-	if _, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("err in running", err)
+	if o, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("err in running: %v\n err: %v", string(o), err)
 		return
 	}
 	//err := cmd.Start()
@@ -82,9 +82,13 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 		if err != nil {
 			continue
 		}
+		size := fi.Size()
 		lock.Lock()
-		totalSize = totalSize + fi.Size()
+		totalSize = totalSize + size
 		lock.Unlock()
+		if size/1e9 > 2 {
+			log.Println(fpath, "size is ", size/1e9)
+		}
 	}
 	//	//file, err := os.Open(fpath)
 	//	//if fpath == "" {
@@ -197,18 +201,23 @@ func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 		//	}
 		//	go generateThumbnail(collectionName, filePaths[i:end], thumbnailPath, resultChan, &wg)
 		//}
-		chunkSize := 5
-		maxChunks := 10 * chunkSize
+		chunkSize := 1
+		maxChunks := 5 * chunkSize
 		var lastGB int64
 		st := time.Now()
-		for i := 250; i < len(filePaths); i += chunkSize {
+		xsSt := time.Now()
+		startFrom := 1650
+		for i := startFrom; i < len(filePaths); i += chunkSize {
 			if i%maxChunks == 0 && i > 0 {
+				adjustedI := i - startFrom + 1
 
 				wg.Wait()
 				totalGbProccessed := totalSize / 1e9
 				timeSince := time.Since(st)
-				log.Printf("total: %d; time: %v ;AVG one: %v ;Gib: %v ; Total GiB: %v\n", i, timeSince, timeSince/time.Duration(maxChunks), totalGbProccessed-lastGB, totalSize/1e9)
-				fmt.Printf("total: %d; time: %v; AVG one: %v ;Gib: %v ; Total GiB: %v\n", i, timeSince, timeSince/time.Duration(maxChunks), totalGbProccessed-lastGB, totalSize/1e9)
+				currentAvg := time.Since(xsSt) / time.Duration(adjustedI)
+
+				log.Printf("total: %d; time: %v ;AVG one: %v ;Gib: %v ; Total GiB: %v took %v; Avg To: %v\n", adjustedI, timeSince, timeSince/time.Duration(maxChunks), totalGbProccessed-lastGB, totalSize/1e9, time.Since(xsSt), currentAvg)
+				fmt.Printf("total: %d; time: %v; AVG one: %v ;Gib: %v ; Total GiB: %v took %v; Avg to %v\n", adjustedI, timeSince, timeSince/time.Duration(maxChunks), totalGbProccessed-lastGB, totalSize/1e9, time.Since(xsSt), currentAvg)
 				st = time.Now()
 				wg = sync.WaitGroup{}
 				lastGB = totalGbProccessed
