@@ -4,10 +4,12 @@ import (
 	f2 "SyncEngine/models/file"
 	"SyncEngine/utils"
 	"fmt"
+	"github.com/nfnt/resize"
+	"image"
+	"image/jpeg"
 	_ "image/png"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sync"
 	"time"
@@ -28,28 +30,28 @@ var totalSize int64
 func generateThumbnail(collectionName string, fpaths []string, thumbnailPath string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	//var errors []error
+	var errors []error
 	//var limit = 1000
-	args := []string{}
-	args = append(args, fpaths...)
+	//args := []string{}
+	//args = append(args, fpaths...)
 	mydir, err := os.Getwd()
 	if err != nil {
 		fmt.Println(err)
 	}
-	outpath := filepath.Join(mydir, thumbnailPath, "%s.jpeg")
+	//outpath := filepath.Join(mydir, thumbnailPath, "%s.jpeg")
 	//fmt.Println("outpath", outpath)
-	args = append(args, []string{"--size", "512x512", "-o", outpath, "--vips-concurrency", "1"}...)
-	cmd := exec.Command("vipsthumbnail", args...)
+	//args = append(args, []string{"--size", "512x512", "-o", outpath, "--vips-concurrency", "1"}...)
+	//cmd := exec.Command("vipsthumbnail", args...)
 	//var stdoutBuf, stderrBuf bytes.Buffer
 
 	//cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 	//cmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 	// fmt.Println("starting the commdn")
 	// st := time.Now()
-	if o, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("err in running: %v\n err: %v", string(o), err)
-		return
-	}
+	//if o, err := cmd.CombinedOutput(); err != nil {
+	//	log.Printf("err in running: %v\n err: %v", string(o), err)
+	//	return
+	//}
 	//err := cmd.Start()
 	//if err != nil {
 	//	fmt.Println("err: ", err)
@@ -71,12 +73,6 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 	//	log.Printf("Something went wrong while updating thubmnail: %v, err: %v", fpaths, err)
 	//}
 
-	err = f2.ThumbnailGeneratedCompleted(fpaths)
-	if err != nil {
-		log.Println("err saving generated thumbnail, err: ", err)
-		return
-	}
-
 	for _, fpath := range fpaths {
 		fi, err := os.Stat(fpath)
 		if err != nil {
@@ -89,52 +85,62 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 		if size/1e9 > 2 {
 			log.Println(fpath, "size is ", size/1e9)
 		}
+		//}
+		file, err := os.Open(fpath)
+		if fpath == "" {
+			continue
+		}
+
+		if err != nil {
+			errors = append(errors, fmt.Errorf("Error opening file %s: %v", fpath, err))
+			continue
+		}
+		defer file.Close()
+
+		img, _, err := image.Decode(file)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("Error decoding image %s: %v", fpath, err))
+			continue
+		}
+
+		// Resize image to 512x512
+		thumbnail := resize.Thumbnail(512, 512, img, resize.Lanczos3)
+
+		// Create output file path for JPEG
+		//hasher := sha1.New()
+		//hasher.Write([]byte(fpath))
+		//hash := hex.EncodeToString(hasher.Sum(nil))
+		outputPath := filepath.Join(mydir, thumbnailPath, "%s.jpeg")
+
+		//outputPath := filepath.Join(thumbnailPath, filepath.Base(fpath)+".jpeg")
+		err = os.MkdirAll(outputPath, os.ModePerm)
+		if err != nil {
+			//errors = append(errors, fmt.Errorf("Error creating output file path %s: %v", outputPath, err))
+			continue
+		}
+		outputPath = filepath.Join(outputPath, "thumbnail_"+filepath.Base(fpath)+".jpeg")
+
+		outFile, err := os.Create(outputPath)
+		if err != nil {
+			//errors = append(errors, fmt.Errorf("Error creating output file %s: %v", outputPath, err))
+			continue
+		}
+		defer outFile.Close()
+
+		// Encode and save the thumbnail as JPEG
+		err = jpeg.Encode(outFile, thumbnail, nil)
+		if err != nil {
+			//errors = append(errors, fmt.Errorf("Error encoding image %s: %v", outputPath, err))
+			continue
+		}
 	}
-	//	//file, err := os.Open(fpath)
-	//	//if fpath == "" {
-	//	//	continue
-	//	//}
-	//
-	//	//if err != nil {
-	//	//	errors = append(errors, fmt.Errorf("Error opening file %s: %v", fpath, err))
-	//	//	continue
-	//	//}
-	//	////defer file.Close()
-	//	//
-	//	//img, _, err := image.Decode(file)
-	//	//if err != nil {
-	//	//	errors = append(errors, fmt.Errorf("Error decoding image %s: %v", fpath, err))
-	//	//	continue
-	//	//}
-	//	//
-	//	//// Resize image to 512x512
-	//	//thumbnail := resize.Thumbnail(512, 512, img, resize.Lanczos3)
-	//	//
-	//	//// Create output file path for JPEG
-	//	//hasher := sha1.New()
-	//	//hasher.Write([]byte(fpath))
-	//	//hash := hex.EncodeToString(hasher.Sum(nil))
-	//	//outputPath := filepath.Join(thumbnailPath, filepath.Base(fpath)+".jpeg")
-	//	//err = os.MkdirAll(outputPath, os.ModePerm)
-	//	//if err != nil {
-	//	//	errors = append(errors, fmt.Errorf("Error creating output file path %s: %v", outputPath, err))
-	//	//	continue
-	//	//}
-	//	//outputPath = filepath.Join(outputPath, "thumbnail_"+filepath.Base(fpath)+".jpeg")
-	//
-	//	//outFile, err := os.Create(outputPath)
-	//	//if err != nil {
-	//	//	errors = append(errors, fmt.Errorf("Error creating output file %s: %v", outputPath, err))
-	//	//	continue
-	//	//}
-	//	////defer outFile.Close()
-	//	//
-	//	//// Encode and save the thumbnail as JPEG
-	//	//err = jpeg.Encode(outFile, thumbnail, nil)
-	//	//if err != nil {
-	//	//	errors = append(errors, fmt.Errorf("Error encoding image %s: %v", outputPath, err))
-	//	//	continue
-	//	//}
+
+	err = f2.ThumbnailGeneratedCompleted(fpaths)
+	if err != nil {
+		log.Println("err saving generated thumbnail, err: ", err)
+		return
+	}
+
 	//	//outFile.Close()
 	//	//file.Close()
 	//	//
