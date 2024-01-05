@@ -74,17 +74,6 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 	//}
 
 	for _, fpath := range fpaths {
-		fi, err := os.Stat(fpath)
-		if err != nil {
-			continue
-		}
-		size := fi.Size()
-		lock.Lock()
-		totalSize = totalSize + size
-		lock.Unlock()
-		if size/1e9 > 2 {
-			log.Println(fpath, "size is ", size/1e9)
-		}
 		//}
 		file, err := os.Open(fpath)
 		if fpath == "" {
@@ -115,6 +104,7 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 		//outputPath := filepath.Join(thumbnailPath, filepath.Base(fpath)+".jpeg")
 		err = os.MkdirAll(outputPath, os.ModePerm)
 		if err != nil {
+			//log.Printf("error creating outfile %s, err: %v", outputPath, err)
 			//errors = append(errors, fmt.Errorf("Error creating output file path %s: %v", outputPath, err))
 			continue
 		}
@@ -122,6 +112,7 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 
 		outFile, err := os.Create(outputPath)
 		if err != nil {
+			log.Printf("error creating outfile %s, err: %v", outputPath, err)
 			//errors = append(errors, fmt.Errorf("Error creating output file %s: %v", outputPath, err))
 			continue
 		}
@@ -130,9 +121,23 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 		// Encode and save the thumbnail as JPEG
 		err = jpeg.Encode(outFile, thumbnail, nil)
 		if err != nil {
+			log.Printf("error encoding jpeg %s, err: %v", outFile, err)
 			//errors = append(errors, fmt.Errorf("Error encoding image %s: %v", outputPath, err))
 			continue
 		}
+
+		fi, err := os.Stat(fpath)
+		if err != nil {
+			continue
+		}
+		size := fi.Size()
+		lock.Lock()
+		totalSize = totalSize + size
+		lock.Unlock()
+		if size/1e9 > 2 {
+			log.Println(fpath, "size is ", size/1e9)
+		}
+
 	}
 
 	err = f2.ThumbnailGeneratedCompleted(fpaths)
