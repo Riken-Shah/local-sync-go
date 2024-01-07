@@ -10,3 +10,6 @@ config.ini
 .idea
 .DS_Store
 
+#pyc
+*.pyc
+
