@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 from itertools import chain
 
@@ -7,7 +8,7 @@ import argparse
 import timeit
 from pathlib import Path
 
-from caption import ImageCaption
+from caption import ImageCaptions
 from clip import ImagesIndexer
 from milvus import Milvus
 
@@ -29,7 +30,8 @@ class SyncDir:
         with open(json_file, 'r') as f:
             rows = json.load(f)
             for row in rows:
-                thumbnail_path = row["thumbnail_path"]
+                file_name = os.path.join(".local/thumbnails2", os.path.basename(row["metadata"]["file_path"].replace(".png", ".jpeg")))
+                thumbnail_path = file_name
                 metadata = row["metadata"]
                 self.rows_dict[thumbnail_path] = metadata
 
@@ -94,6 +96,8 @@ class SyncDir:
         for thumbnail_path, metadata in self.rows_dict.items():
             # if entry.name.endswith(".jpeg"):
             #     images_files.append(entry.path)
+            
+
             images_files.append(thumbnail_path)
 
             if len(images_files) >= bulk:
