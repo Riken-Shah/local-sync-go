@@ -2,7 +2,10 @@ package file
 
 import (
 	"SyncEngine/utils"
+	"errors"
 	"fmt"
+	"log"
+	"os"
 	"strings"
 )
 
@@ -111,6 +114,10 @@ type Row struct {
 func DocumentsToRow(files []File) []Row {
 	var rows = make([]Row, 0)
 	for _, file := range files {
+		if _, err := os.Stat(file.ThumbnailPath); errors.Is(err, os.ErrNotExist) {
+			log.Println("thumbnail doesn't exists: ", file.ThumbnailPath)
+			continue
+		}
 		row := Row{
 			ThumbnailPath: file.ThumbnailPath,
 			Metadata: map[string]interface{}{
