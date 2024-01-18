@@ -13,4 +13,4 @@ config.ini
 #pyc
 *.pyc
 __pycache__/
-
+**/*.pyc

@@ -8,7 +8,7 @@ import argparse
 import timeit
 from pathlib import Path
 
-from caption import ImageCaptions
+from caption import ImageCaption
 from clip import ImagesIndexer
 from milvus import Milvus
 
@@ -30,8 +30,9 @@ class SyncDir:
         with open(json_file, 'r') as f:
             rows = json.load(f)
             for row in rows:
-                file_name = os.path.join(".local/thumbnails2", os.path.basename(row["metadata"]["file_path"].replace(".png", ".jpeg")))
-                thumbnail_path = file_name
+                # file_name = Path(".local\\thumbnails2", os.path.basename(row["metadata"]["file_path"].split(".")[0] + ".jpeg"))
+                # thumbnail_path = file_name
+                thumbnail_path = row["thumbnail_path"]
                 metadata = row["metadata"]
                 self.rows_dict[thumbnail_path] = metadata
 
@@ -72,14 +73,15 @@ class SyncDir:
             record = {
                 "embedding": record["emb"],
                 "fname": str(record["fname"]),
-                "metadata": json.dumps({
+                "metadata":{
                     "width": record["width"],
                     "height": record["height"],
                     "caption": record["caption"],
                     "tags": record["tags"],
                     **self.rows_dict[record["fname"]]
-                })
+                }
             }
+            # print("event: ", self.rows_dict[record["fname"]])
             records_for_db.append(record)
         return records_for_db
 
@@ -97,7 +99,11 @@ class SyncDir:
             # if entry.name.endswith(".jpeg"):
             #     images_files.append(entry.path)
             
-
+            try:
+                print('thum: ', thumbnail_path)
+            except Exception as e:
+                print("error wheil reafin", "excp: ", e)
+                continue
             images_files.append(thumbnail_path)
 
             if len(images_files) >= bulk:

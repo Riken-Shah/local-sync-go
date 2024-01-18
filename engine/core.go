@@ -5,9 +5,10 @@ import (
 	"SyncEngine/models/file"
 	"SyncEngine/models/syncs"
 	"fmt"
-	ini "gopkg.in/ini.v1"
 	"log"
 	"path/filepath"
+
+	ini "gopkg.in/ini.v1"
 )
 
 var SyncProcess = syncs.Sync{}
@@ -71,12 +72,12 @@ func BeginOrResume(rootFilePath string) error {
 		}
 	}
 	log.Println("------- Generate Thumbnails --------")
-	thumbnailPath := filepath.Join(".local", "thumbnails2")
-	err = GenerateThumbnails(SyncProcessID, thumbnailPath)
-	if err != nil {
-		log.Printf("err in thumbnail generations: %v", err)
-		return err
-	}
+	// thumbnailPath := filepath.Join(".local", "thumbnails3")
+	// err = GenerateThumbnails(SyncProcessID, thumbnailPath)
+	// if err != nil {
+	// 	log.Printf("err in thumbnail generations: %v", err)
+	// 	return err
+	// }
 	log.Println("------- Generate Thumbnails Completed --------")
 	log.Println("------- Generate Embeddings --------")
 	cacheFolder := filepath.Join(".cache")

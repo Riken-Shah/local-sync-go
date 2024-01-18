@@ -2,10 +2,11 @@ package file
 
 import (
 	"SyncEngine/utils"
-	"errors"
 	"fmt"
 	"log"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -41,20 +42,26 @@ func CreateCollectionIfNotExists(syncID string) error {
 }
 func InsertMany(syncID string, files []File) error {
 	// Prepare the SQL query
-	query := `INSERT INTO files (file_path, last_synced, thumbnail_generated, thumbnail_path, synced_to_vector_db) VALUES `
-	values := []interface{}{}
+	query := `INSERT INTO files (file_path, last_synced, thumbnail_generated, thumbnail_path, synced_to_vector_db) VALUES (?, ?, ?, ?, ?)`
 
 	for _, file := range files {
-		query += "(?, ?, ?, ?, ?),"
+		// query += ""
+		values := []interface{}{}
 		values = append(values, file.FilePath, file.LastSynced, file.ThumbnailGenerated, file.ThumbnailPath, file.SyncedToVectorDB)
+		// fmt.Println(query)
+		_, err := utils.DBClient.DBClient.Exec(query, values...)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	// Trim the trailing comma
-	query = query[:len(query)-1]
+	// query = query[:len(query)-1]
 
 	// Execute the query
-	_, err := utils.DBClient.DBClient.Exec(query, values...)
-	return err
+	// _, err := utils.DBClient.DBClient.Exec(query, values...)
+	return nil
 }
 
 func FetchAllForGeneratingThumbnails(syncID string) ([]string, error) {
@@ -103,7 +110,7 @@ func FetchAllForGeneratingEmbedding(syncID string, skip, limit int) ([]File, err
 		files = append(files, file)
 	}
 
-	return files, nil
+	return files[skip:limit], nil
 }
 
 type Row struct {
@@ -114,12 +121,14 @@ type Row struct {
 func DocumentsToRow(files []File) []Row {
 	var rows = make([]Row, 0)
 	for _, file := range files {
-		if _, err := os.Stat(file.ThumbnailPath); errors.Is(err, os.ErrNotExist) {
-			log.Println("thumbnail doesn't exists: ", file.ThumbnailPath)
+		f := path.Join(".local/thumbnails2", strings.TrimSuffix(filepath.Base(file.FilePath), path.Ext(file.FilePath))+".jpeg")
+		// fmt.Println("fikle", f)
+		if _, err := os.Stat(f); err != nil {
+			log.Println("thumbnail doesn't exists: ", f)
 			continue
 		}
 		row := Row{
-			ThumbnailPath: file.ThumbnailPath,
+			ThumbnailPath: f,
 			Metadata: map[string]interface{}{
 				string(LastSynced): file.LastSynced,
 				string(FilePath):   file.FilePath,
@@ -138,5 +147,16 @@ func ThumbnailGeneratedCompleted(filePaths []string) error {
 	}
 
 	_, err := utils.DBClient.DBClient.Exec(`UPDATE files SET thumbnail_generated = 1 WHERE file_path IN (?`+strings.Repeat(", ?", len(args)-1)+`)`, args...)
+	return err
+}
+
+func ThumbnailEmbeddingCompleted(filePaths []string) error {
+
+	args := make([]interface{}, len(filePaths))
+	for i, v := range filePaths {
+		args[i] = v
+	}
+
+	_, err := utils.DBClient.DBClient.Exec(`UPDATE files SET synced_to_vector_db = 1 WHERE file_path IN (?`+strings.Repeat(", ?", len(args)-1)+`)`, args...)
 	return err
 }

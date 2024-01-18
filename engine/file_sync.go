@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	maxSliceLength      = 1000
+	maxSliceLength      = 10000
 	filePaths           []file.File
 	newDirsTravelled    []dir.Dir
 	dirAlreadyTravelled map[string]bool

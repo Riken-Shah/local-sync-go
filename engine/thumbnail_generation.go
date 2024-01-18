@@ -3,8 +3,9 @@ package engine
 import (
 	f2 "SyncEngine/models/file"
 	"SyncEngine/utils"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
-	"github.com/nfnt/resize"
 	"image"
 	"image/jpeg"
 	_ "image/png"
@@ -13,6 +14,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/nfnt/resize"
 
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
@@ -30,7 +33,7 @@ var totalSize int64
 func generateThumbnail(collectionName string, fpaths []string, thumbnailPath string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var errors []error
+	// var errors []error
 	//var limit = 1000
 	//args := []string{}
 	//args = append(args, fpaths...)
@@ -75,40 +78,45 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 
 	for _, fpath := range fpaths {
 		//}
-		file, err := os.Open(fpath)
 		if fpath == "" {
+			log.Printf("Empty fpath %s\n", fpath)
 			continue
 		}
+		file, err := os.Open(fpath)
 
 		if err != nil {
-			errors = append(errors, fmt.Errorf("Error opening file %s: %v", fpath, err))
+			// errors = append(errors, fmt.Errorf("Error opening file %s: %v", fpath, err))
+			log.Printf("Error opening file %s: %v\n", fpath, err)
 			continue
 		}
-		defer file.Close()
+		// defer file.Close()
 
 		img, _, err := image.Decode(file)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("Error decoding image %s: %v", fpath, err))
+			log.Printf("Error decoding image %s: %v\n", fpath, err)
+
+			// errors = append(errors, fmt.Errorf("Error decoding image %s: %v", fpath, err))
 			continue
 		}
+		file.Close()
 
 		// Resize image to 512x512
 		thumbnail := resize.Thumbnail(512, 512, img, resize.Lanczos3)
 
 		// Create output file path for JPEG
-		//hasher := sha1.New()
-		//hasher.Write([]byte(fpath))
-		//hash := hex.EncodeToString(hasher.Sum(nil))
-		outputPath := filepath.Join(mydir, thumbnailPath, "%s.jpeg")
+		hasher := sha1.New()
+		hasher.Write([]byte(fpath))
+		hash := hex.EncodeToString(hasher.Sum(nil))
+		outputPath := filepath.Join(mydir, thumbnailPath, hash+".jpeg")
 
 		//outputPath := filepath.Join(thumbnailPath, filepath.Base(fpath)+".jpeg")
-		err = os.MkdirAll(outputPath, os.ModePerm)
-		if err != nil {
-			//log.Printf("error creating outfile %s, err: %v", outputPath, err)
-			//errors = append(errors, fmt.Errorf("Error creating output file path %s: %v", outputPath, err))
-			continue
-		}
-		outputPath = filepath.Join(outputPath, "thumbnail_"+filepath.Base(fpath)+".jpeg")
+		// err = os.MkdirAll(outputPath, os.ModePerm)
+		// if err != nil {
+		//log.Printf("error creating outfile %s, err: %v", outputPath, err)
+		//errors = append(errors, fmt.Errorf("Error creating output file path %s: %v", outputPath, err))
+		// continue
+		// }
+		// outputPath = filepath.Join(outputPath, "thumbnail_"+filepath.Base(fpath)+".jpeg")
 
 		outFile, err := os.Create(outputPath)
 		if err != nil {
@@ -116,7 +124,7 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 			//errors = append(errors, fmt.Errorf("Error creating output file %s: %v", outputPath, err))
 			continue
 		}
-		defer outFile.Close()
+		// defer outFile.Close()
 
 		// Encode and save the thumbnail as JPEG
 		err = jpeg.Encode(outFile, thumbnail, nil)
@@ -126,8 +134,11 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 			continue
 		}
 
+		outFile.Close()
+		// file.Close()
 		fi, err := os.Stat(fpath)
 		if err != nil {
+			log.Println("err in fpath stat: ", fpath)
 			continue
 		}
 		size := fi.Size()
@@ -146,8 +157,6 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 		return
 	}
 
-	//	//outFile.Close()
-	//	//file.Close()
 	//	//
 	//	//savedFpaths = append(savedFpaths, fpath)
 	//
@@ -213,11 +222,11 @@ func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 		//	go generateThumbnail(collectionName, filePaths[i:end], thumbnailPath, resultChan, &wg)
 		//}
 		chunkSize := 1
-		maxChunks := 5 * chunkSize
+		maxChunks := 10 * chunkSize
 		var lastGB int64
 		st := time.Now()
 		xsSt := time.Now()
-		startFrom := 1650
+		startFrom := 0
 		for i := startFrom; i < len(filePaths); i += chunkSize {
 			if i%maxChunks == 0 && i > 0 {
 				adjustedI := i - startFrom + 1

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"SyncEngine/models/file"
 	f2 "SyncEngine/models/file"
 	"bytes"
 	"encoding/json"
@@ -15,7 +16,7 @@ import (
 func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvusPassword, cacheDir string) error {
 	shouldContinue := true
 	skip := 0
-	limit := 500000
+	limit := 10000
 
 	var stdoutBuf, stderrBuf bytes.Buffer
 
@@ -28,8 +29,9 @@ func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvu
 		if len(documents) < limit {
 			shouldContinue = false
 		}
-
+		fmt.Println("total dcos found: ", len(documents))
 		rows := f2.DocumentsToRow(documents)
+		fmt.Println("total rows found: ", len(rows))
 		jsonString, _ := json.Marshal(rows)
 		tempJSONFilePath := filepath.Join(".local", "temp.json")
 		err = os.WriteFile(tempJSONFilePath, jsonString, os.ModePerm)
@@ -54,6 +56,12 @@ func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvu
 		if err != nil {
 			return err
 		}
+
+		fpaths := []string{}
+		for _, ro := range rows {
+			fpaths = append(fpaths, ro.Metadata["file_path"].(string))
+		}
+		file.ThumbnailEmbeddingCompleted(fpaths)
 
 		//for _, doc := range documents {
 		//	doc.Set(string(f2.SyncedToVectorDB), true)

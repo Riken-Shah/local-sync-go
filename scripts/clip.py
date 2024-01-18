@@ -21,6 +21,11 @@ def to_rgb(image):
     return image.convert("RGB")
 
 
+def collate_fn(batch):
+    batch = list(filter(lambda x: x is not None, batch))
+    return torch.utils.data.dataloader.default_collate(batch)
+
+
 class ImagesDataset(Dataset):
     def __init__(self, images_path, images_files, preprocess, input_resolution):
         super().__init__()
@@ -34,14 +39,17 @@ class ImagesDataset(Dataset):
 
     def __getitem__(self, index):
         raw_fname = self.images_files[index]
-        fname = self.images_path / raw_fname
-
+        # fname = Path(self.images_path, raw_fname)
+        fname= raw_fname
+        
         try:
             image = self.preprocess(Image.open(fname))
         except Exception as e:
             print(f"error reading {fname}, error as {e}")
             image = None
-
+            return None
+            # raise e
+        # print("retur", str(raw_fname), "index: ", index, "lenL ", len(image))
         return image, str(raw_fname)
 
 
@@ -133,7 +141,7 @@ class ImagesIndexer:
         ds = ImagesDataset(
             self.images_path, images_files, self.preprocess_image, self.input_resolution)
         dl = DataLoader(
-            ds, batch_size=32, shuffle=False, num_workers=os.cpu_count() // 4
+            ds,collate_fn=collate_fn, batch_size=32, shuffle=False, num_workers=os.cpu_count() // 4
         )
         print("Building index with CLIP. It may take a while...")
 
@@ -163,7 +171,11 @@ class ImagesIndexer:
 
         records = []
         for batch in tqdm(dl, file=sys.stdout, bar_format="{l_bar}{bar}{r_bar}"):
-            records.extend(process_batch(batch))
+            if batch is None:
+                continue
+            else:
+                # preds = model(batch)
+                records.extend(process_batch(batch))
 
         # with ThreadPoolExecutor() as executor:
         #     futures = []
