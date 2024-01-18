@@ -11,6 +11,5 @@ config.ini
 .DS_Store
 
 #pyc
-*.pyc
-__pycache__/
-**/*.pyc
+ __pycache__/
+ *.pyc
