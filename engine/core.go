@@ -72,12 +72,12 @@ func BeginOrResume(rootFilePath string) error {
 		}
 	}
 	log.Println("------- Generate Thumbnails --------")
-	// thumbnailPath := filepath.Join(".local", "thumbnails3")
-	// err = GenerateThumbnails(SyncProcessID, thumbnailPath)
-	// if err != nil {
-	// 	log.Printf("err in thumbnail generations: %v", err)
-	// 	return err
-	// }
+	thumbnailPath := filepath.Join(".local", "thumbnails3")
+	err = GenerateThumbnails(SyncProcessID, thumbnailPath)
+	if err != nil {
+		log.Printf("err in thumbnail generations: %v", err)
+		return err
+	}
 	log.Println("------- Generate Thumbnails Completed --------")
 	log.Println("------- Generate Embeddings --------")
 	cacheFolder := filepath.Join(".cache")

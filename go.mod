@@ -13,6 +13,7 @@ require (
 
 require (
 	github.com/google/orderedcode v0.0.1 // indirect
+	github.com/milvus-io/milvus-sdk-go/v2 v2.3.5 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect

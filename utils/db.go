@@ -13,7 +13,7 @@ type DBHandler struct {
 }
 
 var dbOnce sync.Once
-var dbPath = filepath.Join(".local", "db3")
+var dbPath = filepath.Join(".local", "db2")
 var DBClient DBHandler
 
 func init() {

@@ -2,10 +2,12 @@ package file
 
 import (
 	"SyncEngine/utils"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"math"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -92,7 +94,7 @@ func FetchAllForGeneratingThumbnails(syncID string) ([]string, error) {
 }
 
 func FetchAllForGeneratingEmbedding(syncID string, skip, limit int) ([]File, error) {
-	q := `SELECT * FROM files  WHERE ` + string(SyncedToVectorDB) + ` = false;`
+	q := `SELECT * FROM files` //  WHERE ` + string(SyncedToVectorDB) + ` = 9;`
 	rows, err := utils.DBClient.DBClient.Query(q)
 
 	if err != nil {
@@ -109,8 +111,9 @@ func FetchAllForGeneratingEmbedding(syncID string, skip, limit int) ([]File, err
 		}
 		files = append(files, file)
 	}
+	fmt.Println("len: ", len(files), "skip", skip, "limit", limit)
 
-	return files[skip:limit], nil
+	return files[skip:int(math.Min(float64(skip+limit), float64(len(files))))], nil
 }
 
 type Row struct {
@@ -120,20 +123,30 @@ type Row struct {
 
 func DocumentsToRow(files []File) []Row {
 	var rows = make([]Row, 0)
+	rmap := map[string]bool{}
 	for _, file := range files {
-		f := path.Join(".local/thumbnails2", strings.TrimSuffix(filepath.Base(file.FilePath), path.Ext(file.FilePath))+".jpeg")
+		// f := filepath.Join(".local\\thumbnails2", strings.TrimSuffix(filepath.Base(file.FilePath), path.Ext(file.FilePath))+".jpeg")
+		hasher := sha1.New()
+		hasher.Write([]byte(file.FilePath))
+		hash := hex.EncodeToString(hasher.Sum(nil))
+		x := filepath.Join(".local\\thumbnails3", hash+".jpeg")
 		// fmt.Println("fikle", f)
-		if _, err := os.Stat(f); err != nil {
-			log.Println("thumbnail doesn't exists: ", f)
+		// x := strings.TrimSuffix(filepath.Base(file.FilePath), path.Ext(file.FilePath)) + ".jpeg"
+		if _, ok := rmap[x]; ok {
+			continue
+		}
+		if _, err := os.Stat(x); err != nil {
+			log.Println("thumbnail doesn't exists: ", x)
 			continue
 		}
 		row := Row{
-			ThumbnailPath: f,
+			ThumbnailPath: x,
 			Metadata: map[string]interface{}{
 				string(LastSynced): file.LastSynced,
-				string(FilePath):   file.FilePath,
+				string(FilePath):   "",
 			},
 		}
+		rmap[x] = true
 		rows = append(rows, row)
 	}
 	return rows

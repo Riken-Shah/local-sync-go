@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"SyncEngine/models/file"
 	f2 "SyncEngine/models/file"
 	"bytes"
 	"encoding/json"
@@ -16,7 +15,7 @@ import (
 func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvusPassword, cacheDir string) error {
 	shouldContinue := true
 	skip := 0
-	limit := 10000
+	limit := 100000
 
 	var stdoutBuf, stderrBuf bytes.Buffer
 
@@ -32,13 +31,15 @@ func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvu
 		fmt.Println("total dcos found: ", len(documents))
 		rows := f2.DocumentsToRow(documents)
 		fmt.Println("total rows found: ", len(rows))
-		jsonString, _ := json.Marshal(rows)
+		jsonString, _ := json.MarshalIndent(rows, "", "    ")
 		tempJSONFilePath := filepath.Join(".local", "temp.json")
+		embDir := filepath.Join(".local", "embs2")
+		os.Mkdir(embDir, os.ModePerm)
 		err = os.WriteFile(tempJSONFilePath, jsonString, os.ModePerm)
 		if err != nil {
 			return err
 		}
-		args := []string{"scripts/sync.py", "--json-file", tempJSONFilePath, "--collection-name", collectionName, "--cache-dir", cacheDir}
+		args := []string{"scripts/sync.py", "--json-file", tempJSONFilePath, "--emb-dir", embDir, "--collection-name", collectionName, "--cache-dir", cacheDir}
 		milvusArgs := []string{"--milvus-uri", milvusURI, "--milvus-username", milvusUsername, "--milvus-password", milvusPassword}
 		args = append(args, milvusArgs...)
 		cmd := exec.Command("python", args...)
@@ -56,12 +57,14 @@ func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvu
 		if err != nil {
 			return err
 		}
+		skip += limit
+		// break
 
-		fpaths := []string{}
-		for _, ro := range rows {
-			fpaths = append(fpaths, ro.Metadata["file_path"].(string))
-		}
-		file.ThumbnailEmbeddingCompleted(fpaths)
+		// fpaths := []string{}
+		// for _, ro := range rows {
+		// 	fpaths = append(fpaths, ro.Metadata["file_path"].(string))
+		// }
+		// file.ThumbnailEmbeddingCompleted(fpaths)
 
 		//for _, doc := range documents {
 		//	doc.Set(string(f2.SyncedToVectorDB), true)

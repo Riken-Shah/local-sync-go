@@ -11,13 +11,17 @@ from pathlib import Path
 from caption import ImageCaption
 from clip import ImagesIndexer
 from milvus import Milvus
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 
 EXTENSIONS_LIST = ["*.jpeg"]
 
 
 class SyncDir:
-    def __init__(self, thumbnail_dir, json_file, cache_dir, collection_name, milvus_uri, milvus_username,
+    def __init__(self, thumbnail_dir, embedding_folder, json_file, cache_dir, collection_name, milvus_uri, milvus_username,
                  milvus_password):
+        self.embedding_folder = Path(embedding_folder)
         # Cache Dir for models
         self.cache_dir = cache_dir
         self.images_dir = Path(thumbnail_dir)
@@ -27,12 +31,15 @@ class SyncDir:
         print(f"Torch will use self.device: {self.device}")
 
         self.rows_dict = {}
-        with open(json_file, 'r') as f:
-            rows = json.load(f)
+        with open(json_file, 'r',encoding="utf-8") as f:
+            r = f.read()
+            rows = json.loads(r.replace('\\"', '"').replace('\\\\"', '\\"'))
+            print(f"ros is {len(rows)}")
             for row in rows:
                 # file_name = Path(".local\\thumbnails2", os.path.basename(row["metadata"]["file_path"].split(".")[0] + ".jpeg"))
                 # thumbnail_path = file_name
                 thumbnail_path = row["thumbnail_path"]
+                # thumbnail_path = ".local\\thumbnails2\\" + row["thumbnail_path"]
                 metadata = row["metadata"]
                 self.rows_dict[thumbnail_path] = metadata
 
@@ -93,31 +100,32 @@ class SyncDir:
 
         # print("{} images found".format(len(images_files)))
 
-        bulk = 100000
+        bulk = 30000
         images_files = []
+        print("Total ros: ", len(self.rows_dict.items()))
         for thumbnail_path, metadata in self.rows_dict.items():
             # if entry.name.endswith(".jpeg"):
             #     images_files.append(entry.path)
             
-            try:
-                print('thum: ', thumbnail_path)
-            except Exception as e:
-                print("error wheil reafin", "excp: ", e)
-                continue
+            # try:
+            #     print('thum: ', thumbnail_path, end='\r')
+            # except Exception as e:
+            #     print("error wheil reafin", "excp: ", e)
+            #     continue
             images_files.append(thumbnail_path)
 
             if len(images_files) >= bulk:
                 records = self.indexer.add_bulk(self.images_dir, images_files, self.create_record, self.empty_function,
-                                                self.captioner.get_caption_and_tags)
+                                                self.captioner.get_caption_and_tags, self.embedding_folder)
                 # insert into milvus
-                self.milvus.upsert(self.create_records_for_milvus(records))
+                # self.milvus.upsert(self.create_records_for_milvus(records))
                 images_files = []
 
         if len(images_files) > 0:
             records = self.indexer.add_bulk(self.images_dir, images_files, self.create_record, self.empty_function,
-                                            self.captioner.get_caption_and_tags)
+                                            self.captioner.get_caption_and_tags, self.embedding_folder)
             # insert into milvus
-            self.milvus.upsert(self.create_records_for_milvus(records))
+            # self.milvus.upsert(self.create_records_for_milvus(records))
 
 
 if __name__ == '__main__':
@@ -128,6 +136,7 @@ if __name__ == '__main__':
     parser.add_argument("--milvus-username", help="Milvus Username")
     parser.add_argument("--milvus-password", help="Milvus Password")
     parser.add_argument("--cache-dir", help="Cache Dir", default="")
+    parser.add_argument("--emb-dir", help="Emb Dir", required=True)
     parser.add_argument('--rotation-invariant', help='Average embeddings of 4 rotations on image inputs', default=False,
                         action='store_true')
     parser.add_argument("--force-sync", help="Force sync to milvus", default=False, action="store_true")
@@ -137,7 +146,7 @@ if __name__ == '__main__':
 
     start = timeit.default_timer()
 
-    syncEngine = SyncDir("", args.json_file, collection_name=args.collection_name,
+    syncEngine = SyncDir("",args.emb_dir, args.json_file,  collection_name=args.collection_name,
                          cache_dir=args.cache_dir,
                          milvus_uri=args.milvus_uri, milvus_username=args.milvus_username,
                          milvus_password=args.milvus_password)

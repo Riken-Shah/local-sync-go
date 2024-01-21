@@ -135,7 +135,7 @@ class ImagesIndexer:
     #         q_thread.put((None, None))
     #
     #     return records
-    def add_bulk(self, images_path, images_files, create_record, generate_thumbnail, get_caption_and_tags):
+    def add_bulk(self, images_path, images_files, create_record, generate_thumbnail, get_caption_and_tags, embedding_folder):
         self.images_path = images_path
         # Build index
         ds = ImagesDataset(
@@ -159,13 +159,19 @@ class ImagesIndexer:
             # to_pil_transform = transforms.ToPILImage()
 
             batch_records = []
+            i = 0
+            
             for fname, image_tensor, emb in zip(fnames, images, emb_images):
                 image = Image.open(self.images_path / fname)
                 # image = to_pil_transform(image_tensor)
-                # asyncio.run(generate_thumbnail(fname, image))
+            #     # asyncio.run(generate_thumbnail(fname, image))
                 caption, tags = get_caption_and_tags(image)
                 width, height = image.size
                 batch_records.append(create_record(fname, width, height, emb, caption, tags))
+                save_path = os.path.join(embedding_folder, f"{os.path.basename(fname).split('.')[0]}.npy")
+                i += 1
+                np.save(save_path, emb)
+
 
             return batch_records
 
@@ -176,7 +182,7 @@ class ImagesIndexer:
             else:
                 # preds = model(batch)
                 records.extend(process_batch(batch))
-
+        print("Total records: ", len(records))
         # with ThreadPoolExecutor() as executor:
         #     futures = []
         #     for batch in tqdm(dl, file=sys.stdout, bar_format="{l_bar}{bar}{r_bar}"):
