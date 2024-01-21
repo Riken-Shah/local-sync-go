@@ -116,6 +116,28 @@ func FetchAllForGeneratingEmbedding(syncID string, skip, limit int) ([]File, err
 	return files[skip:int(math.Min(float64(skip+limit), float64(len(files))))], nil
 }
 
+func FetchAllForSync(syncID string, skip, limit int) ([]File, error) {
+	q := `SELECT * FROM files WHERE SyncedToVectorDB = false LIMIT ? OFFSET ?;`
+	rows, err := utils.DBClient.DBClient.Query(q, limit, skip)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []File
+	for rows.Next() {
+		var file File
+		err := rows.Scan(&file.FilePath, &file.LastSynced, &file.ThumbnailGenerated, &file.ThumbnailPath, &file.SyncedToVectorDB)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, file)
+	}
+
+	return files, nil
+}
+
 type Row struct {
 	ThumbnailPath string                 `json:"thumbnail_path"`
 	Metadata      map[string]interface{} `json:"metadata"`
