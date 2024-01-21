@@ -43,7 +43,7 @@ func BeginOrResume(rootFilePath string) error {
 	milvusUri := milvus.Key("uri").String()
 	milvusUsername := milvus.Key("user").String()
 	milvusPassword := milvus.Key("password").String()
-	collectionMName := milvus.Key("collection").String()
+	collectionName := milvus.Key("collection").String()
 
 	if err := file.CreateCollectionIfNotExists(SyncProcessID); err != nil {
 		log.Printf("err in CreateCollectionIfNotExists")
@@ -71,21 +71,21 @@ func BeginOrResume(rootFilePath string) error {
 			}
 		}
 	}
-	log.Println("------- Generate Thumbnails --------")
-	thumbnailPath := filepath.Join(".local", "thumbnails3")
-	err = GenerateThumbnails(SyncProcessID, thumbnailPath)
-	if err != nil {
-		log.Printf("err in thumbnail generations: %v", err)
-		return err
-	}
-	log.Println("------- Generate Thumbnails Completed --------")
-	log.Println("------- Generate Embeddings --------")
-	cacheFolder := filepath.Join(".cache")
-	err = GenerateEmbeddings(SyncProcessID, collectionMName, milvusUri, milvusUsername, milvusPassword, cacheFolder)
-	if err != nil {
-		return err
-	}
-	log.Println("------- Generate Embeddings Completed --------")
+	// log.Println("------- Generate Thumbnails --------")
+	// thumbnailPath := filepath.Join(".local", "thumbnails3")
+	// err = GenerateThumbnails(SyncProcessID, thumbnailPath)
+	// if err != nil {
+	// 	log.Printf("err in thumbnail generations: %v", err)
+	// 	return err
+	// }
+	// log.Println("------- Generate Thumbnails Completed --------")
+	// log.Println("------- Generate Embeddings --------")
+	// cacheFolder := filepath.Join(".cache")
+	// err = GenerateEmbeddings(SyncProcessID, collectionMName, milvusUri, milvusUsername, milvusPassword, cacheFolder)
+	// if err != nil {
+	// 	return err
+	// }
+	// log.Println("------- Generate Embeddings Completed --------")
 	log.Println("------- Sync Milvus --------")
 	embFolder := filepath.Join(".local", "embs2")
 	err = SyncMilvus(SyncProcessID, milvusUri, milvusUsername, milvusPassword, collectionName, embFolder)

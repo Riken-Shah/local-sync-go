@@ -117,7 +117,7 @@ func FetchAllForGeneratingEmbedding(syncID string, skip, limit int) ([]File, err
 }
 
 func FetchAllForSync(syncID string, skip, limit int) ([]File, error) {
-	q := `SELECT * FROM files WHERE SyncedToVectorDB = false LIMIT ? OFFSET ?;`
+	q := `SELECT * FROM files WHERE synced_to_vector_db = false LIMIT ? OFFSET ?;`
 	rows, err := utils.DBClient.DBClient.Query(q, limit, skip)
 
 	if err != nil {

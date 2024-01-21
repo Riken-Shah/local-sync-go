@@ -6,13 +6,15 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/kshedden/gonpy"
-	"github.com/milvus-io/milvus-sdk-go/v2/client"
-	"github.com/milvus-io/milvus-sdk-go/v2/entity"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/kshedden/gonpy"
+	"github.com/milvus-io/milvus-sdk-go/v2/client"
+	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
 
 type Metadata struct {
@@ -85,11 +87,11 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 		}
 	}
 
-	var limit = 100000
+	var limit = 30000
 	var skip = 0
 	var recordsFound = 100001
 
-	for recordsFound > limit {
+	for recordsFound >= limit {
 		docs, err := file.FetchAllForSync(syncID, skip, limit)
 		if err != nil {
 			log.Printf("Something went wrong while fetching docs, err: %v\n", err)
@@ -98,16 +100,18 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 		recordsFound = len(docs)
 		skip += limit
 
-		fpaths := make([]string, 0)
+		fnames := make([]string, 0)
 		embds := make([][]float32, 0)
 		metadata := make([][]byte, 0)
+
+		fmt.Println("total docs found: ", len(docs))
 
 		for _, doc := range docs {
 			// Create output file path for JPEG
 			hasher := sha1.New()
 			hasher.Write([]byte(doc.FilePath))
 			hash := hex.EncodeToString(hasher.Sum(nil))
-			outputPath := filepath.Join(embFolderPath, hash+".jpeg")
+			outputPath := filepath.Join(embFolderPath, hash+".npy")
 
 			// Only add if embedding exists
 			if _, err := os.Stat(outputPath); err == nil {
@@ -127,18 +131,22 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 					log.Printf("error json marshling for %s err: %v\n", doc.FilePath, err)
 					continue
 				}
-				fpaths = append(fpaths, doc.FilePath)
+				fnames = append(fnames, doc.FilePath)
 				metadata = append(metadata, jsonByes)
 				embds = append(embds, data)
 			}
 		}
 
-		fpathCol := entity.NewColumnVarChar("fpath", fpaths)
+		fnameCol := entity.NewColumnVarChar("fname", fnames)
 		metadataCol := entity.NewColumnJSONBytes("metadata", metadata)
 		embCol := entity.NewColumnFloatVector("embedding", 512, embds)
 
+		log.Println("fname: ", len(fnames), "meta: ", len(metadata), "em: ", len(embds))
+		if len(fnames) == 0 {
+			continue
+		}
 		// insert into default partition
-		_, err = c.Insert(ctx, collectionName, "", fpathCol, metadataCol, embCol)
+		_, err = c.Upsert(ctx, collectionName, "", fnameCol, metadataCol, embCol)
 		if err != nil {
 			log.Fatal("failed to insert film data:", err.Error())
 		}
@@ -151,7 +159,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 		}
 		log.Println("flush completed")
 
-		err = file.ThumbnailEmbeddingCompleted(fpaths)
+		err = file.ThumbnailEmbeddingCompleted(fnames)
 		if err != nil {
 			log.Printf("something went wrong while marking emb completed, err: %v", err)
 			return err
