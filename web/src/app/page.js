@@ -57,9 +57,9 @@ export default function Home() {
       setInferenceAPI(inferenceAPI);
       setImageAPI(imageAPI);
 
-      if(inferenceAPI === "")
+      if(!inferenceAPI)
       setInferenceAPI("https://jpntza-ip-122-187-218-226.tunnelmole.net")
-      if(imageAPI === "")
+      if(!imageAPI)
         setImageAPI("https://jpntza-ip-122-187-218-226.tunnelmole.net")
     }
   }, []);
