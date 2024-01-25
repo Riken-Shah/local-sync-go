@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from "@nextui-org/react";
 
-export function ImageGrid({ images, search }) {
+export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
   return (
     <div className="columns-2 gap-4 sm:columns-3 xl:columns-4 2xl:columns-5">
       {images &&
@@ -34,13 +34,13 @@ export function ImageGrid({ images, search }) {
                 alt="Woman listing to music"
                 className="object-cover mb-4"
                 height={400}
-                src={`http://localhost:1001/${thumbnail_url}`}
+                src={`${imageAPI}${thumbnail_url}`}
                 width={400}
                 loading="lazy"
                 isBlurred
               />
 
-              {/* // blured backgroun */}
+              {/* // blured background */}
               <div className="absolute top-2 right-2 z-10">
                 <Button
                   isIconOnly
@@ -51,10 +51,11 @@ export function ImageGrid({ images, search }) {
                   onClick={(e) => {
                     e.preventDefault();
                     fetch(
-                      `http://localhost:1001/${photo_url}?auto=format&fit=crop&w=480&q=80`
+                      `${imageAPI}${thumbnail_url}?auto=format&fit=crop&w=480&q=80`,
+                        {method: "POST"}
                     ).then((r) => {
                       // console.log(r.blob())
-                      r.blob().then((blob) => search({ files: [blob] }));
+                      r.blob().then((blob) => search({ files: [blob], inferenceAPI }));
                     });
                   }}
                 >

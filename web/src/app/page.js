@@ -1,23 +1,79 @@
 "use client";
 
+import React from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Modal } from "./components/Modal";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import {auth} from "./firebase"
+
 import { SearchBar } from "./components/SearchBar";
 import { ImageGrid } from "./components/ImageGrid";
 import axios from "axios";
 import _ from "lodash";
+import {SettingIcon} from "@/app/components/SettingIcon";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  useDisclosure,
+  Input
+} from "@nextui-org/react";
+import { onAuthStateChanged } from "firebase/auth";
+import Auth from "@/app/components/Auth";
 
-const API_URL = "http://localhost:1001";
+
 
 export default function Home() {
   // Application state
   const [result, setResult] = useState(null);
+  const {isOpen, onOpen, onOpenChange} = useDisclosure();
+  const {isOpen: authModelOpen, onOpen: authModelOnOpen} = useDisclosure();
+  const [inferenceAPI, setInferenceAPI] = useState("");
+  const [imageAPI, setImageAPI] = useState("");
+  const [user, setUser]= useState(null)
+
+  useEffect(()=>{
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        setUser(user)
+      } else {
+        authModelOnOpen()
+        // User is signed out
+        // ...
+        console.log("user is logged out")
+      }
+    });
+
+  }, [])
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      let inferenceAPI = localStorage.getItem('inferenceAPI');
+      let imageAPI = localStorage.getItem('imageAPI');
+
+      setInferenceAPI(inferenceAPI);
+      setImageAPI(imageAPI);
+    }
+  }, []);
+
+
+  const handleReset = () => {
+    localStorage.clear()
+    auth.signOut()
+    location.reload()
+  }
+
+
+
 
   function loadImage(selectedFile) {
-    var reader = new FileReader();
+    const reader = new FileReader();
 
     reader.onload = function (event) {
-      let imgObject = new Object();
+      let imgObject = {};
       imgObject.src = event.target.result;
     };
 
@@ -27,12 +83,12 @@ export default function Home() {
   const search = async ({
     text,
     files,
+                          inferenceAPI,
   }) => {
 setResult(null);
-    
     if (text) {
       const resp = await axios.post(
-        API_URL + "/search",
+          inferenceAPI + "/search",
         {
           text,
         },
@@ -53,7 +109,7 @@ setResult(null);
         loadImage(file);
       }
 
-      const resp = await axios.post(API_URL + "/search", data, {
+      const resp = await axios.post(inferenceAPI + "/search", data, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -61,6 +117,8 @@ setResult(null);
       setResult(resp.data);
     }
   };
+
+  console.log(inferenceAPI, imageAPI)
 
   const throttledSearch = useCallback(
     _.throttle(search, 1000, { leading: false }),
@@ -70,8 +128,96 @@ setResult(null);
   return (
     <main className="mx-auto max-w-[1960px] p-4 relative">
       {/* <Modal currentImage={currentImage} setCurrentImage={setCurrentImage} /> */}
-      <SearchBar search={throttledSearch} />
-      <ImageGrid images={result} search={throttledSearch} />
+      <div className="flex w-full items-center">
+      <SearchBar search={throttledSearch}  inferenceAPI={inferenceAPI} imageAPI={imageAPI} />
+        <Button className="m-2 mb-6" isIconOnly color="warning" variant="faded" aria-label="Take a photo"  onPress={onOpen}>
+          <SettingIcon />
+        </Button>
+      </div>
+
+      <ImageGrid images={result} search={throttledSearch} inferenceAPI={inferenceAPI} imageAPI={imageAPI} />
+
+      {/* Auth Modal */}
+      <Modal isOpen={authModelOpen} onOpenChange={authModelOnOpen} backdrop={"blur"}>
+        <ModalContent>
+          {(onClose) => (
+              <>
+                <ModalHeader className="flex flex-col gap-1">Login to continue</ModalHeader>
+                <ModalBody>
+                  <div className="bg-white p-10 rounded-lg block">
+            <span className="text-black text-2l">
+              Please Sign In to Continue
+            </span>
+                    <Auth/>
+                  </div>
+                </ModalBody>
+                <ModalFooter>
+                  <Button color="danger" variant="light" onPress={onClose}>
+                    Close
+                  </Button>
+                </ModalFooter>
+              </>
+          )}
+        </ModalContent>
+      </Modal>
+      {/* Settings Modal */}
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
+        <ModalContent>
+          {(onClose) => (
+              <>
+                <ModalHeader className="flex flex-col gap-1">Settings</ModalHeader>
+                <ModalBody>
+                  <Input
+                      isRequired
+                      type="text"
+                      label="Backend API"
+                      value={inferenceAPI}
+                      onChange={(e) => {
+                        setInferenceAPI(e.target.value)
+                        localStorage.setItem("inferenceAPI", e.target.value)
+                      }}
+                      // className="ma"
+                  />
+                  <Input
+                      isRequired
+                      type="text"
+                      label="Image API"
+                      value={imageAPI}
+                      onChange={(e) => {
+                        setImageAPI(e.target.value)
+                        localStorage.setItem("imageAPI", e.target.value)
+                      }}
+                      // className="max-w-xs"
+                  />
+
+
+                  <Input
+                      isRequired
+                      type="text"
+                      label="User ID"
+                      value={user.uid}
+                      disabled
+                      // className="max-w-xs"
+                  />
+
+                  <Button color="danger" onPress={handleReset}>
+                    Reset Everything
+                  </Button>
+
+                  <Button color="warning" onPress={auth.signOut}>
+                    Logout
+                  </Button>
+                </ModalBody>
+                <ModalFooter>
+                  <Button color="danger" variant="light" onPress={onClose}>
+                    Close
+                  </Button>
+                </ModalFooter>
+              </>
+          )}
+        </ModalContent>
+      </Modal>
+
     </main>
   );
 }

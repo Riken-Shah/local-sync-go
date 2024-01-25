@@ -4,18 +4,18 @@ import { throttle } from "lodash";
 import { useRef } from "react";
 
 
-export function SearchBar({ search }) {
+export function SearchBar({ search , apiURL, inferenceAPI}) {
 
     const fileRef = useRef(null);
 
     const textOnChange = throttle((e) => {
-        search({ text: e.target.value });
+        search({ text: e.target.value , inferenceAPI});
     }
     , 2000);
 
     
     return (
-      <div className="relative mb-4 flex justify-center items-center">
+      <div className="relative mb-4 flex justify-center items-center w-full">
         <Input
           type="search"
           placeholder="Search for images..."
@@ -68,7 +68,7 @@ export function SearchBar({ search }) {
             type="file"
             accept="image/*"
             onChange={(e) => 
-              search({ files: e.target.files })
+              search({ files: e.target.files , inferenceAPI})
             }
           />
         </div>
