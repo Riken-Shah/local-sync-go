@@ -21,13 +21,13 @@ export function SearchBar({ search , apiURL, inferenceAPI}) {
     return (
       <div className="relative mb-4 flex justify-center items-center w-full">
         <Input
-
+onBlur={performSearch}
           type="search"
           value={searchPrompt}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search for images..."
           onKeyUp={textOnChange}
-          onFocusChange={(isFocused) => !isFocused && performSearch()}
+          // onFocusChange={(isFocused) => !isFocused && performSearch()}
         />
         <div className="absolute inset-y-0 right-5 flex items-center pr-3 cursor-pointer" onClick={() => {
             fileRef.current.click();
