@@ -243,7 +243,7 @@ export default function Home() {
         </ModalContent>
       </Modal>
       {/*Loading Modal*/}
-      <Modal isOpen={loadingModelOpen} onOpenChange={loadingModelOnOpen} backdrop={"blur"}>
+      <Modal isOpen={loadingModelOpen} onOpenChange={loadingModelOnOpen} backdrop={"blur"} placement={"top-center"}>
         <ModalContent>
           {(onClose) => (
               <>
