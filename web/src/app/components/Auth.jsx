@@ -30,7 +30,9 @@ const firebaseAuthConfig = {
 
             // Don't automatically redirect. We handle redirecting based on
             // auth state in withAuthComponent.js.
-            return false;
+            // return false;
+            // location.
+            return "/"
         },
     },
 };

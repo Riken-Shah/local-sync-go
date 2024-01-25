@@ -17,6 +17,9 @@ const nextConfig = {
     },
     reactStrictMode: false, // changed from true to false
     swcMinify: true,
+    env: {
+
+    }
 };
 
 module.exports = nextConfig;

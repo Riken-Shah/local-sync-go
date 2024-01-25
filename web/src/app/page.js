@@ -18,10 +18,11 @@ import {
   ModalFooter,
   Button,
   useDisclosure,
-  Input
+  Input, CircularProgress
 } from "@nextui-org/react";
 import { onAuthStateChanged } from "firebase/auth";
 import Auth from "@/app/components/Auth";
+
 
 
 
@@ -30,12 +31,25 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
   const {isOpen: authModelOpen, onOpen: authModelOnOpen} = useDisclosure();
+  const {isOpen: loadingModelOpen, onOpen: loadingModelOnOpen, onClose: loadingModelOnClose} = useDisclosure();
+
   const [inferenceAPI, setInferenceAPI] = useState("");
   const [imageAPI, setImageAPI] = useState("");
   const [user, setUser]= useState(null)
 
+  const [value, setValue] = React.useState(0);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setValue((v) => (v >= 100 ? 0 : v + 10));
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+
   useEffect(()=>{
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(getAuth(), (user) => {
       if (user) {
         // User is signed in, see docs for a list of available properties
         // https://firebase.google.com/docs/reference/js/firebase.User
@@ -71,9 +85,6 @@ export default function Home() {
     location.reload()
   }
 
-
-
-
   function loadImage(selectedFile) {
     const reader = new FileReader();
 
@@ -90,45 +101,54 @@ export default function Home() {
     files,
                           inferenceAPI,
   }) => {
-setResult(null);
-    if (text) {
-      const resp = await axios.post(
-          inferenceAPI + "/search",
-        {
-          text,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+    try {
+      setResult(null);
+      loadingModelOnOpen()
+      if (text) {
+        const resp = await axios.post(
+            inferenceAPI + "/search",
+            {
+              text,
+            },
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+        );
+
+        setResult(resp.data);
+      } else if (files?.length) {
+        const acceptedFiles = files;
+        let data = new FormData();
+        for (let i = 0; i < acceptedFiles.length; i++) {
+          const file = acceptedFiles[i];
+          data.append("fileToUpload[]", file);
+          loadImage(file);
         }
-      );
 
-      setResult(resp.data);
-    } else {
-      const acceptedFiles = files;
-      let data = new FormData();
-      for (let i = 0; i < acceptedFiles.length; i++) {
-        const file = acceptedFiles[i];
-        data.append("fileToUpload[]", file);
-        loadImage(file);
+        const resp = await axios.post(inferenceAPI + "/search", data, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        setResult(resp.data);
       }
-
-      const resp = await axios.post(inferenceAPI + "/search", data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      setResult(resp.data);
+    } catch (e) {
+      console.log("something went wrong for img search err: ", e)
+      alert("Something went wrong!")
+    }finally {
+      loadingModelOnClose()
     }
   };
 
   console.log(inferenceAPI, imageAPI)
 
-  const throttledSearch = useCallback(
-    _.throttle(search, 1000, { leading: false }),
-    []
-  );
+  // const throttledSearch = useCallback(
+  //   _.throttle(search, 1500, { leading: false }),
+  //   []
+  // );
+  const throttledSearch = search
 
   return (
     <main className="mx-auto max-w-[1960px] p-4 relative">
@@ -222,7 +242,26 @@ setResult(null);
           )}
         </ModalContent>
       </Modal>
+      {/*Loading Modal*/}
+      <Modal isOpen={loadingModelOpen} onOpenChange={loadingModelOnOpen} backdrop={"blur"}>
+        <ModalContent>
+          {(onClose) => (
+              <>
+                {/*<ModalHeader className="flex flex-col gap-1">Login to continue</ModalHeader>*/}
+                <ModalBody>
+                  <CircularProgress
+                      aria-label="Loading..."
+                      size="lg"
+                      value={value}
+                      color="warning"
+                      showValueLabel={true}
+                  />
+                </ModalBody>
 
+              </>
+          )}
+        </ModalContent>
+      </Modal>
     </main>
   );
 }
