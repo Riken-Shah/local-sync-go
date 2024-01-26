@@ -71,10 +71,10 @@ export default function Home() {
       setInferenceAPI(inferenceAPI);
       setImageAPI(imageAPI);
 
-      if(!inferenceAPI)
+      // if(!inferenceAPI)
       setInferenceAPI("https://ql3oye-ip-122-187-218-226.tunnelmole.net")
-      if(!imageAPI)
-        setImageAPI("https://ql3oye-ip-122-187-218-226.tunnelmole.net")
+      // if(!imageAPI)
+      setImageAPI("https://ql3oye-ip-122-187-218-226.tunnelmole.net")
     }
   }, []);
 
