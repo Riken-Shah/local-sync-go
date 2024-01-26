@@ -72,9 +72,9 @@ export default function Home() {
       setImageAPI(imageAPI);
 
       if(!inferenceAPI)
-      setInferenceAPI("https://jpntza-ip-122-187-218-226.tunnelmole.net")
+      setInferenceAPI("https://ql3oye-ip-122-187-218-226.tunnelmole.net")
       if(!imageAPI)
-        setImageAPI("https://jpntza-ip-122-187-218-226.tunnelmole.net")
+        setImageAPI("https://ql3oye-ip-122-187-218-226.tunnelmole.net")
     }
   }, []);
 
