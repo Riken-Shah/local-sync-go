@@ -21,7 +21,7 @@ export function SearchBar({ search , apiURL, inferenceAPI}) {
     return (
       <div className="relative mb-4 flex justify-center items-center w-full">
         <Input
-onBlur={performSearch}
+            // onBlur={performSearch}
           type="search"
           value={searchPrompt}
           onChange={(e) => setSearch(e.target.value)}
@@ -34,7 +34,7 @@ onBlur={performSearch}
         }}>
           <svg
             id="Layer_1"
-            style={{ enableBackground: "new 0 0 64 64;" }}
+
             version="1.1"
             viewBox="0 0 64 64"
             xmlSpace="preserve"

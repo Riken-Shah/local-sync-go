@@ -3,7 +3,8 @@
 import React from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import {auth} from "./firebase"
+import {setUserId } from "firebase/analytics";
+import {analytics, auth, sendLog} from "./firebase"
 
 import { SearchBar } from "./components/SearchBar";
 import { ImageGrid } from "./components/ImageGrid";
@@ -39,13 +40,13 @@ export default function Home() {
 
   const [value, setValue] = React.useState(0);
 
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setValue((v) => (v >= 100 ? 0 : v + 10));
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, []);
+  // React.useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setValue((v) => (v >= 100 ? 0 : v + 10));
+  //   }, 500);
+  //
+  //   return () => clearInterval(interval);
+  // }, []);
 
 
   useEffect(()=>{
@@ -72,9 +73,9 @@ export default function Home() {
       setImageAPI(imageAPI);
 
       // if(!inferenceAPI)
-      setInferenceAPI("https://ql3oye-ip-122-187-218-226.tunnelmole.net")
+      setInferenceAPI("https://qz51h2-ip-122-187-218-226.tunnelmole.net")
       // if(!imageAPI)
-      setImageAPI("https://ql3oye-ip-122-187-218-226.tunnelmole.net")
+      setImageAPI("https://qz51h2-ip-122-187-218-226.tunnelmole.net")
     }
   }, []);
 
@@ -118,7 +119,7 @@ export default function Home() {
         );
 
         setResult(resp.data);
-      } else if (files?.length) {
+        sendLog("text_search", {text, results_count: resp?.data?.length})      } else if (files?.length) {
         const acceptedFiles = files;
         let data = new FormData();
         for (let i = 0; i < acceptedFiles.length; i++) {
@@ -133,6 +134,7 @@ export default function Home() {
           },
         });
         setResult(resp.data);
+        sendLog("img_search", {results_count: resp?.data?.length})
       }
     } catch (e) {
       console.log("something went wrong for img search err: ", e)

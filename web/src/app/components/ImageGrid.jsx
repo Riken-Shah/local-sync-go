@@ -10,6 +10,7 @@ import {
   Button,
   PopoverTrigger,
 } from "@nextui-org/react";
+import {sendLog} from "@/app/firebase";
 
 export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
   return (
@@ -29,7 +30,7 @@ export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
             //   ai_description,
             similarity,
           }) => (
-            <div className="group block mb-2 relative" key={photo_id}>
+            <div className="group block mb-2 relative" key={thumbnail_url}>
               <Image
                 alt="Woman listing to music"
                 className="object-cover mb-4"
@@ -49,6 +50,7 @@ export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
                   variant="faded"
                   ariaLabel="Take a photo"
                   onClick={(e) => {
+                    sendLog("img_2_img", {thumbnail_url})
                     e.preventDefault();
                     fetch(
                       `${imageAPI}${thumbnail_url}?auto=format&fit=crop&w=480&q=80`,
@@ -63,7 +65,6 @@ export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
                     height="512px"
                     id="Layer_1"
                     fill="white"
-                    style={{ enableBackground: "new 0 0 512 512;" }}
                     version="1.1"
                     viewBox="0 0 512 512"
                     width="512px"
@@ -78,7 +79,7 @@ export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
 
               <div className="absolute bottom-2 right-2 group-hover:visible invisible">
                 <Popover placement="top" showArrow offset={10} classNames="">
-                  <PopoverTrigger>
+                  <PopoverTrigger onClick={() => {sendLog("img_more_options", {thumbnail_url})}}>
                     <Button className="bg-gradient-to-tr from-pink-500 to-yellow-500">
                       More Options
                     </Button>
