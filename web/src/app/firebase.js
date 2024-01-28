@@ -8,13 +8,13 @@ import {getAuth} from "firebase/auth";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSyAOYVPghVxQM2-vubwYnIDFzHhfmAIrxHY",
-    authDomain: "ai-folder.firebaseapp.com",
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     projectId: "ai-folder",
     storageBucket: "ai-folder.appspot.com",
-    messagingSenderId: "183197221584",
-    appId: "1:183197221584:web:cabfca1b0e99ea1a6a94d5",
-    measurementId: "G-0H3KRRH8S6"
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
 };
 
 // Initialize Firebase
@@ -24,18 +24,13 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app)
 
 // export let analytics =null
-export let analytics = null
+export let analytics =   app.name && typeof window !== 'undefined' ? getAnalytics(app) : null;
 
 
-export const sendLog = async (name, obj) => {
+export const sendLog = (name, obj) => {
     if(analytics === null) {
-        // analytics = getAnalytics(app)
-        analytics = await isSupported() ? getAnalytics(app) : null
-
-        console.log("analytics init is not supported", name, obj)
-        // return
-        // analytics = getAnalytics(app)
+        console.log("analytics is not supported", name, obj)
+        return
     }
-    console.log("ana", analytics, name, obj)
     logEvent(analytics, name, obj)
 }
