@@ -1,14 +1,13 @@
 
-import { Input } from "@nextui-org/react";
+import {Image, Input} from "@nextui-org/react";
 import {useRef, useState} from "react";
 import {useRouter} from "next/navigation";
 import {textSearch, imageSearch} from "@/app/search";
 
-export function SearchBar({ user, loadingModalOnOpen}) {
+export function SearchBar({ searchPrompt, setSearchPrompt, user, search, loadingModalOnOpen}) {
 
     const fileRef = useRef(null);
     const router = useRouter()
-    const [searchPrompt, setSearch] = useState("");
 
 
 
@@ -27,20 +26,25 @@ export function SearchBar({ user, loadingModalOnOpen}) {
     return (
       <div className="relative mb-4 flex justify-center items-center w-full">
         <Input
-            // onBlur={performSearch}
           type="search"
           value={searchPrompt}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search for images..."
+          onChange={(e) => setSearchPrompt(e.target.value)}
+          placeholder={`Search for "red flowers", "white leaf", "black background"`}
           onKeyUp={textOnChange}
-          // onFocusChange={(isFocused) => !isFocused && performSearch()}
+
         />
-        <div className="absolute inset-y-0 right-5 flex items-center pr-3 cursor-pointer" onClick={() => {
+        <div className="absolute inset-y-0 right-5 flex items-center pr-3 cursor-pointer overflow-hidden mb-2 mt-2 rounded" onClick={() => {
             fileRef.current.click();
         }}>
-          <svg
-            id="Layer_1"
+            {search && search.startsWith("http") ?     <Image
+                alt="Woman listing to music"
+                className="object-cover mb-4"
+                src={search}
+                width={80}
+                loading="eager"
+            />: <svg
 
+            id="Layer_1"
             version="1.1"
             viewBox="0 0 64 64"
             xmlSpace="preserve"
@@ -74,7 +78,7 @@ export function SearchBar({ user, loadingModalOnOpen}) {
                 />
               </g>
             </g>
-          </svg>
+          </svg>}
             <input ref={fileRef} className="hidden" type="file" accept="image/*" onChange={imageInputOnChange} />
         </div>
       </div>

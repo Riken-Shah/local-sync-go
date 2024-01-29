@@ -18,7 +18,7 @@ import {
     Input,
     CircularProgress,
 } from "@nextui-org/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Auth from "@/app/components/Auth";
 
 function isValidURL(string) {
@@ -32,11 +32,13 @@ function setupDefaultVisibleImages() {
 }
 
 
-async function performSearch(inferenceAPI, search, setResult, loadingModelOnOpen, loadingModelOnClose) {
+async function performSearch(inferenceAPI, search, setResult, setSearchPrompt, loadingModelOnOpen, loadingModelOnClose) {
     const type = isValidURL(search) ? "image" : "text";
     const body = {
         [type === "text" ? "text" : "fileUrl"]: search,
     };
+
+    type  === "text" ? setSearchPrompt(search): setSearchPrompt("")
 
     const headers = {
         "Content-Type": "application/json",
@@ -59,35 +61,46 @@ async function performSearch(inferenceAPI, search, setResult, loadingModelOnOpen
 }
 
 function Home() {
-    const router = useRouter();
+    // Search
     const searchParams = useSearchParams();
     const search = searchParams.get("search");
 
-    const [result, setResult] = useState(null);
-    const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    // For modals
+    const { isOpen: settingsModalOpen, onOpen: settingsModalOnOpen, onOpenChange: settingsModalOnOpenChange } = useDisclosure();
     const { isOpen: authModelOpen, onOpen: authModelOnOpen } = useDisclosure();
     const { isOpen: loadingModelOpen, onOpen: loadingModelOnOpen, onClose: loadingModelOnClose } = useDisclosure();
 
+    // Global state
     const [inferenceAPI, setInferenceAPI] = useState("");
     const [imageAPI, setImageAPI] = useState("");
     const [user, setUser] = useState(null);
 
-    const [value, setValue] = useState(0);
+    // Loader state
+    const [loadingCompleted, setLoadingCompleted] = useState(0);
+
+    // Used by SearchBar.jsx
+    const [searchPrompt, setSearch] = useState("");
+    const [images, setImages] = useState(null);
+
+    // Used by ImageGrid.jsx
+    const [visibleImages, setVisibleImages] = useState(10);
+
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setValue((v) => (v >= 100 ? 0 : v + 10));
+            setLoadingCompleted((v) => (v >= 100 ? 0 : v + 10));
         }, 500);
 
         return () => clearInterval(interval);
     }, []);
 
+    // Perform Search
     useEffect(() => {
         if (search !== null && inferenceAPI && user) {
             setVisibleImages(setupDefaultVisibleImages())
-            performSearch(inferenceAPI, search, setResult, loadingModelOnOpen, loadingModelOnClose);
+            performSearch(inferenceAPI, search, setImages, setSearch, loadingModelOnOpen, loadingModelOnClose);
         }
-    }, [search, inferenceAPI]);
+    }, [search, inferenceAPI, user]);
 
     useEffect(() => {
         onAuthStateChanged(getAuth(), (user) => {
@@ -106,7 +119,6 @@ function Home() {
         if (typeof window !== 'undefined' && window.localStorage) {
             let inferenceAPI = localStorage.getItem('inferenceAPI') || "https://pf18ik-ip-122-187-218-226.tunnelmole.net";
             let imageAPI = localStorage.getItem('imageAPI') || "https://pf18ik-ip-122-187-218-226.tunnelmole.net";
-
             setInferenceAPI(inferenceAPI);
             setImageAPI(imageAPI);
         }
@@ -119,19 +131,16 @@ function Home() {
     };
 
 
-
-    const [visibleImages, setVisibleImages] = useState(10);
-
     return (
         <main className="mx-auto max-w-[1960px] p-4 relative">
             <div className="flex w-full items-center">
-                <SearchBar user={user} imageAPI={imageAPI} loadingModalOnOpen={loadingModelOnOpen} />
-                <Button className="m-2 mb-6" isIconOnly color="warning" variant="faded" aria-label="Take a photo" onPress={onOpen}>
+                <SearchBar searchPrompt={searchPrompt}  setSearchPrompt={setSearch} user={user} imageAPI={imageAPI} loadingModalOnOpen={loadingModelOnOpen}  search={search}/>
+                <Button className="m-2 mb-6" isIconOnly color="warning" variant="faded" aria-label="Take a photo" onPress={settingsModalOnOpen}>
                     <SettingIcon />
                 </Button>
             </div>
 
-            <ImageGrid user={user} loadingModalOnOpen={loadingModelOnOpen} visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={result} imageAPI={imageAPI} />
+            <ImageGrid user={user} loadingModalOnOpen={loadingModelOnOpen} visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={images} imageAPI={imageAPI} />
 
             {/* Auth Modal */}
             <Modal isOpen={authModelOpen} onOpenChange={authModelOnOpen} backdrop={"blur"}>
@@ -156,7 +165,7 @@ function Home() {
             </Modal>
 
             {/* Settings Modal */}
-            <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
+            <Modal isOpen={settingsModalOpen} onOpenChange={settingsModalOnOpen} backdrop="blur">
                 <ModalContent>
                     {(onClose) => (
                         <>
@@ -212,7 +221,7 @@ function Home() {
                     {(onClose) => (
                         <>
                             <ModalBody>
-                                <CircularProgress aria-label="Loading..." size="lg" value={value} color="warning" showValueLabel={true} />
+                                <CircularProgress aria-label="Loading..." size="lg" value={loadingCompleted} color="warning" showValueLabel={true} />
                             </ModalBody>
                         </>
                     )}
