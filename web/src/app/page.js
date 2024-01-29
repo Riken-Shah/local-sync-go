@@ -120,6 +120,7 @@ export default function Home() {
   }) => {
     try {
       setResult(null);
+      setVisibleImages(setupDefaultVisibleImages())
       loadingModelOnOpen()
       if (text) {
         const resp = await axios.post(
@@ -165,7 +166,13 @@ export default function Home() {
   //   _.throttle(search, 1500, { leading: false }),
   //   []
   // );
+  function setupDefaultVisibleImages() {
+    const isDesktop = window.innerWidth >= 1024;
+    return isDesktop ? 20 : 6;
+  }
   const throttledSearch = search
+
+  const [visibleImages, setVisibleImages] = useState(10);
 
   return (
     <main className="mx-auto max-w-[1960px] p-4 relative">
@@ -177,7 +184,7 @@ export default function Home() {
         </Button>
       </div>
 
-      <ImageGrid images={result} search={throttledSearch} inferenceAPI={inferenceAPI} imageAPI={imageAPI} />
+      <ImageGrid visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={result} search={throttledSearch} inferenceAPI={inferenceAPI} imageAPI={imageAPI} />
 
       {/* Auth Modal */}
       <Modal isOpen={authModelOpen} onOpenChange={authModelOnOpen} backdrop={"blur"}>

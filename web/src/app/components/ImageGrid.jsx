@@ -1,6 +1,6 @@
 // import Image from 'next/image'
 import { blurHashToDataURL } from "../utils.js";
-import React from "react";
+import React, {useState} from "react";
 
 import {
   Image,
@@ -12,11 +12,18 @@ import {
 } from "@nextui-org/react";
 import {sendLog} from "@/app/firebase";
 
-export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
+export function ImageGrid({ visibleImages, setVisibleImages, images, search, inferenceAPI, imageAPI}) {
+  const loadMoreImages = () => {
+    // Increase the number of visible images by 10 (or adjust as needed)
+    setVisibleImages((prevVisibleImages) => prevVisibleImages + 10);
+  };
+
+  {console.log("visible images: ", visibleImages)}
   return (
+      <div>
     <div className="columns-2 gap-4 sm:columns-3 xl:columns-4 2xl:columns-5">
       {images &&
-        images.map(
+        images.slice(0, visibleImages).map(
           ({
             id: photo_id,
             photo_url,
@@ -30,15 +37,16 @@ export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
             //   ai_description,
             similarity,
           }) => (
-            <div className="group block mb-2 relative" key={thumbnail_url}>
+            <div className=" block mb-2 relative" key={thumbnail_url}>
               <Image
                 alt="Woman listing to music"
                 className="object-cover mb-4"
+                // width="auto"
                 height={400}
                 src={`${imageAPI}${thumbnail_url}`}
                 width={400}
                 loading="eager"
-                isBlurred
+                // isBlurred
               />
 
               {/* // blured background */}
@@ -136,5 +144,11 @@ export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
           )
         )}
     </div>
+        {images && images.length > visibleImages && (
+            <div className="block text-center mt-2 mb-2">
+              <Button onClick={loadMoreImages}>Show More</Button>
+            </div>
+        )}
+      </div>
   );
 }
