@@ -19,6 +19,7 @@ import {
     CircularProgress,
 } from "@nextui-org/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Auth from "@/app/components/Auth";
 
 function isValidURL(string) {
     const res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
@@ -82,7 +83,7 @@ function Home() {
     }, []);
 
     useEffect(() => {
-        if (search !== null && inferenceAPI) {
+        if (search !== null && inferenceAPI && user) {
             setVisibleImages(setupDefaultVisibleImages())
             performSearch(inferenceAPI, search, setResult, loadingModelOnOpen, loadingModelOnClose);
         }
