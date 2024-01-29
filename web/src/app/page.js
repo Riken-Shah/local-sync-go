@@ -4,7 +4,7 @@ import React from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import {setUserId } from "firebase/analytics";
-import {analytics, auth, sendLog} from "./firebase"
+import {analytics, auth, sendLog, toggleAnalytics} from "./firebase"
 
 import { SearchBar } from "./components/SearchBar";
 import { ImageGrid } from "./components/ImageGrid";
@@ -22,6 +22,7 @@ import {
   Input, CircularProgress
 } from "@nextui-org/react";
 import { onAuthStateChanged } from "firebase/auth";
+import {fileUpload} from "./upload"
 import Auth from "@/app/components/Auth";
 
 
@@ -40,13 +41,13 @@ export default function Home() {
 
   const [value, setValue] = React.useState(0);
 
-  // React.useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     setValue((v) => (v >= 100 ? 0 : v + 10));
-  //   }, 500);
-  //
-  //   return () => clearInterval(interval);
-  // }, []);
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setValue((v) => (v >= 100 ? 0 : v + 10));
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
 
 
   useEffect(()=>{
@@ -55,6 +56,9 @@ export default function Home() {
         // User is signed in, see docs for a list of available properties
         // https://firebase.google.com/docs/reference/js/firebase.User
         setUser(user)
+        const devUsers = ["rikenshah.02@gmail.com", "rikenshah2002@gmail.com"]
+        // Toggle analytics is the user is not dev
+        toggleAnalytics(!devUsers.includes(user.email))
       } else {
         authModelOnOpen()
         // User is signed out
@@ -72,10 +76,11 @@ export default function Home() {
       setInferenceAPI(inferenceAPI);
       setImageAPI(imageAPI);
 
+      const localAPI = "https://pf18ik-ip-122-187-218-226.tunnelmole.net"
       // if(!inferenceAPI)
-      setInferenceAPI("https://qz51h2-ip-122-187-218-226.tunnelmole.net")
+      setInferenceAPI(localAPI)
       // if(!imageAPI)
-      setImageAPI("https://qz51h2-ip-122-187-218-226.tunnelmole.net")
+      setImageAPI(localAPI)
     }
   }, []);
 
@@ -96,6 +101,17 @@ export default function Home() {
 
     reader.readAsDataURL(selectedFile);
   }
+
+  async function blobToDataURL(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = _e => resolve(reader.result);
+      reader.onerror = _e => reject(reader.error);
+      reader.onabort = _e => reject(new Error("Read aborted"));
+      reader.readAsDataURL(blob);
+    });
+  }
+
 
   const search = async ({
     text,
@@ -121,20 +137,19 @@ export default function Home() {
         setResult(resp.data);
         sendLog("text_search", {text, results_count: resp?.data?.length})      } else if (files?.length) {
         const acceptedFiles = files;
-        let data = new FormData();
-        for (let i = 0; i < acceptedFiles.length; i++) {
+        let i =0
           const file = acceptedFiles[i];
-          data.append("fileToUpload[]", file);
-          loadImage(file);
-        }
+          const dataURL = await blobToDataURL(file)
+          const downloadURL = await fileUpload(user.email, file.name, dataURL)
+          console.log("download url", downloadURL, file)
 
-        const resp = await axios.post(inferenceAPI + "/search", data, {
+        const resp = await axios.post(inferenceAPI + "/search", JSON.stringify({"fileUrl": downloadURL}), {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         });
         setResult(resp.data);
-        sendLog("img_search", {results_count: resp?.data?.length})
+        sendLog("img_search", {image_url: downloadURL, results_count: resp?.data?.length})
       }
     } catch (e) {
       console.log("something went wrong for img search err: ", e)

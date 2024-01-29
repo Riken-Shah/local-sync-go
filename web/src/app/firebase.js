@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics, logEvent, isSupported } from "firebase/analytics";
 import {getAuth} from "firebase/auth";
+import {getStorage} from "firebase/storage";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -24,13 +25,25 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app)
 
 // export let analytics =null
-export let analytics =   app.name && typeof window !== 'undefined' ? getAnalytics(app) : null;
+export let analytics =   null
 
+export const storage = getStorage(app)
+
+
+let analyticsEnabled = false
+
+export const toggleAnalytics = (enabled) => analyticsEnabled = Boolean(enabled)
 
 export const sendLog = (name, obj) => {
+    if (!analyticsEnabled) {
+        console.log("analytics is not enabled", name, obj)
+        return;
+    }
+
     if(analytics === null) {
-        console.log("analytics is not supported", name, obj)
-        return
+        analytics = app.name && typeof window !== 'undefined' ? getAnalytics(app) : null;
+        console.log("analytics is not supported; trying to init", name, obj)
+        return;
     }
     logEvent(analytics, name, obj)
 }

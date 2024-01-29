@@ -69,16 +69,7 @@ export function SearchBar({ search , apiURL, inferenceAPI}) {
               </g>
             </g>
           </svg>
-          <Input
-          ref={fileRef}
-          className="hidden"
-            type="file"
-            accept="image/*"
-
-            onChange={(e) =>
-                    search({files: e.target.files, inferenceAPI})
-            }
-          />
+            <input ref={fileRef} className="hidden" type="file" accept="image/*" onChange={(e) =>                 search({files: e.target.files, inferenceAPI})} />
         </div>
       </div>
 

@@ -37,7 +37,7 @@ export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
                 height={400}
                 src={`${imageAPI}${thumbnail_url}`}
                 width={400}
-                loading="lazy"
+                loading="eager"
                 isBlurred
               />
 
@@ -56,8 +56,11 @@ export function ImageGrid({ images, search, inferenceAPI, imageAPI}) {
                       `${imageAPI}${thumbnail_url}?auto=format&fit=crop&w=480&q=80`,
                         {method: "POST"}
                     ).then((r) => {
-                      // console.log(r.blob())
-                      r.blob().then((blob) => search({ files: [blob], inferenceAPI }));
+                      r.blob().then((blob) => {
+                        const splits =  thumbnail_url.split("\\")
+                        blob.name = splits[splits.length - 1]
+                        search({files: [blob], inferenceAPI})
+                      });
                     });
                   }}
                 >
