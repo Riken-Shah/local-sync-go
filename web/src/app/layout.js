@@ -6,8 +6,8 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'FashionXAI Indexer',
-  description: 'What is File Explorer',
+  title: 'AI Folder',
+  description: 'File Explorer powered by AI',
 }
 
 export default function RootLayout({ children }) {

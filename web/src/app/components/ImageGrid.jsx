@@ -11,14 +11,22 @@ import {
   PopoverTrigger,
 } from "@nextui-org/react";
 import {sendLog} from "@/app/firebase";
+import {imageSearch} from "@/app/search";
+import {useRouter} from "next/navigation";
 
-export function ImageGrid({ visibleImages, setVisibleImages, images, search, inferenceAPI, imageAPI}) {
+export function ImageGrid({ visibleImages, setVisibleImages, images, user, imageAPI, loadingModalOnOpen}) {
+  const router = useRouter()
   const loadMoreImages = () => {
     // Increase the number of visible images by 10 (or adjust as needed)
     setVisibleImages((prevVisibleImages) => prevVisibleImages + 10);
+    sendLog("more-images", {})
   };
 
-  {console.log("visible images: ", visibleImages)}
+  const performImageSearch = ((blob) => {
+    loadingModalOnOpen()
+    imageSearch(router, user.email, blob)
+  })
+
   return (
       <div>
     <div className="columns-2 gap-4 sm:columns-3 xl:columns-4 2xl:columns-5">
@@ -41,12 +49,10 @@ export function ImageGrid({ visibleImages, setVisibleImages, images, search, inf
               <Image
                 alt="Woman listing to music"
                 className="object-cover mb-4"
-                // width="auto"
                 height={400}
                 src={`${imageAPI}${thumbnail_url}`}
                 width={400}
                 loading="eager"
-                // isBlurred
               />
 
               {/* // blured background */}
@@ -61,13 +67,13 @@ export function ImageGrid({ visibleImages, setVisibleImages, images, search, inf
                     sendLog("img_2_img", {thumbnail_url})
                     e.preventDefault();
                     fetch(
-                      `${imageAPI}${thumbnail_url}?auto=format&fit=crop&w=480&q=80`,
+                      `${imageAPI}${thumbnail_url}`,
                         {method: "POST"}
                     ).then((r) => {
                       r.blob().then((blob) => {
                         const splits =  thumbnail_url.split("\\")
                         blob.name = splits[splits.length - 1]
-                        search({files: [blob], inferenceAPI})
+                        performImageSearch(blob);
                       });
                     });
                   }}
