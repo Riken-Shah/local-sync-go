@@ -206,7 +206,7 @@ function Home() {
             </Modal>
 
             {/* Loading Modal */}
-            <Modal isOpen={loadingModelOpen} onOpenChange={loadingModelOnOpen} backdrop={"blur"} placement={"top-center"}>
+            <Modal isOpen={loadingModelOpen} onOpenChange={loadingModelOnOpen} backdrop={"blur"} placement={"center"}>
                 <ModalContent>
                     {(onClose) => (
                         <>
