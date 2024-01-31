@@ -140,7 +140,7 @@ function Home() {
                 </Button>
             </div>
 
-            <ImageGrid user={user} loadingModalOnOpen={loadingModelOnOpen} visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={images} imageAPI={imageAPI} />
+            <ImageGrid user={user} search={search} loadingModalOnOpen={loadingModelOnOpen} visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={images} imageAPI={imageAPI} />
 
             {/* Auth Modal */}
             <Modal isOpen={authModelOpen} onOpenChange={authModelOnOpen} backdrop={"blur"}>

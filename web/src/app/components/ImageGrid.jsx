@@ -14,12 +14,12 @@ import {sendLog} from "@/app/firebase";
 import {imageSearch} from "@/app/search";
 import {useRouter} from "next/navigation";
 
-export function ImageGrid({ visibleImages, setVisibleImages, images, user, imageAPI, loadingModalOnOpen}) {
+export function ImageGrid({ visibleImages, search, setVisibleImages, images, user, imageAPI, loadingModalOnOpen}) {
   const router = useRouter()
   const loadMoreImages = () => {
     // Increase the number of visible images by 10 (or adjust as needed)
     setVisibleImages((prevVisibleImages) => prevVisibleImages + 10);
-    sendLog("more-images", {})
+    sendLog("more-images", {search})
   };
 
   const performImageSearch = ((blob) => {
