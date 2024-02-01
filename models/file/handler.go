@@ -138,6 +138,10 @@ func FetchAllForSync(syncID string, skip, limit int) ([]File, error) {
 	return files, nil
 }
 
+func Reset() {
+	utils.DBClient.DBClient.Exec(`UPDATE files SET synced_to_vector_db = false`)
+}
+
 type Row struct {
 	ThumbnailPath string                 `json:"thumbnail_path"`
 	Metadata      map[string]interface{} `json:"metadata"`

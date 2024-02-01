@@ -226,7 +226,7 @@ func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 		var lastGB int64
 		st := time.Now()
 		xsSt := time.Now()
-		startFrom := 0
+		startFrom := 200
 		for i := startFrom; i < len(filePaths); i += chunkSize {
 			if i%maxChunks == 0 && i > 0 {
 				adjustedI := i - startFrom + 1

@@ -77,7 +77,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 		}
 
 		// Now add index
-		idx, err := entity.NewIndexIvfFlat(entity.L2, 16384)
+		idx, err := entity.NewIndexFlat(entity.L2)
 		if err != nil {
 			log.Fatal("fail to create ivf flat index:", err.Error())
 		}
@@ -87,9 +87,11 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 		}
 	}
 
-	var limit = 30000
+	var limit = 5000
 	var skip = 0
 	var recordsFound = 100001
+
+	// file.Reset()
 
 	for recordsFound >= limit {
 		docs, err := file.FetchAllForSync(syncID, skip, limit)
@@ -115,7 +117,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 
 			// Only add if embedding exists
 			if _, err := os.Stat(outputPath); err == nil {
-				m := Metadata{Format: filepath.Ext(doc.FilePath)[1:]}
+				m := Metadata{Format: filepath.Ext(doc.FilePath)[1:], Thumbnail: filepath.Join(".local", "thumbnails3", hash+".jpeg")}
 				r, err := gonpy.NewFileReader(outputPath)
 				if err != nil {
 					log.Printf("error reading .npy for %s err: %v\n", doc.FilePath, err)

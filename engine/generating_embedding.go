@@ -15,12 +15,12 @@ import (
 func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvusPassword, cacheDir string) error {
 	shouldContinue := true
 	skip := 0
-	limit := 100000
+	limit := 10000
 
 	var stdoutBuf, stderrBuf bytes.Buffer
 
 	for shouldContinue {
-		documents, err := f2.FetchAllForGeneratingEmbedding(syncID, skip, limit)
+		documents, err := f2.FetchAllForSync(syncID, skip, limit)
 		if err != nil {
 			return err
 		}
@@ -33,7 +33,7 @@ func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvu
 		fmt.Println("total rows found: ", len(rows))
 		jsonString, _ := json.MarshalIndent(rows, "", "    ")
 		tempJSONFilePath := filepath.Join(".local", "temp.json")
-		embDir := filepath.Join(".local", "embs2")
+		embDir := filepath.Join(".local", "embs3")
 		os.Mkdir(embDir, os.ModePerm)
 		err = os.WriteFile(tempJSONFilePath, jsonString, os.ModePerm)
 		if err != nil {
@@ -58,7 +58,7 @@ func GenerateEmbeddings(syncID, collectionName, milvusURI, milvusUsername, milvu
 			return err
 		}
 		skip += limit
-		// break
+		break
 
 		// fpaths := []string{}
 		// for _, ro := range rows {

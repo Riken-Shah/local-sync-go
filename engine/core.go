@@ -71,7 +71,7 @@ func BeginOrResume(rootFilePath string) error {
 			}
 		}
 	}
-	// log.Println("------- Generate Thumbnails --------")
+	log.Println("------- Generate Thumbnails --------")
 	// thumbnailPath := filepath.Join(".local", "thumbnails3")
 	// err = GenerateThumbnails(SyncProcessID, thumbnailPath)
 	// if err != nil {
@@ -81,12 +81,14 @@ func BeginOrResume(rootFilePath string) error {
 	// log.Println("------- Generate Thumbnails Completed --------")
 	// log.Println("------- Generate Embeddings --------")
 	// cacheFolder := filepath.Join(".cache")
-	// err = GenerateEmbeddings(SyncProcessID, collectionMName, milvusUri, milvusUsername, milvusPassword, cacheFolder)
+	// file.Reset()
+	// err = GenerateEmbeddings(SyncProcessID, collectionName, milvusUri, milvusUsername, milvusPassword, cacheFolder)
 	// if err != nil {
 	// 	return err
 	// }
 	// log.Println("------- Generate Embeddings Completed --------")
 	log.Println("------- Sync Milvus --------")
+	file.Reset()
 	embFolder := filepath.Join(".local", "embs2")
 	err = SyncMilvus(SyncProcessID, milvusUri, milvusUsername, milvusPassword, collectionName, embFolder)
 	log.Println("------- Sync Milvus Completed --------")

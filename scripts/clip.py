@@ -86,7 +86,7 @@ class ImagesIndexer:
     def load_if_not_loaded(self):
         if self.model is None:
             print("Loading CLIP model...")
-            model, _, preprocess = open_clip.create_model_and_transforms("ViT-B-32", pretrained="openai",
+            model, _, preprocess = open_clip.create_model_and_transforms("ViT-L-14", pretrained="openai",
                                                                          cache_dir=self.cache_dir, device=self.device)
             # model, _, preprocess = open_clip.create_model_and_transforms("ViT-L-14", pretrained="openai", cache_dir=self.cache_dir, device=self.device)
             # ViT - L - 14 / openai
@@ -200,7 +200,7 @@ class ImagesIndexer:
             yield fname.relative_to(self.images_path)
 
     def encode_prompt(self, prompt, normalize=False):
-        tokenizer = open_clip.get_tokenizer('ViT-B-32')
+        tokenizer = open_clip.get_tokenizer('ViT-L-14')
         text = tokenizer([prompt]).to(self.device)
         with torch.no_grad():
             emb_text = self.model.encode_text(text).float()
