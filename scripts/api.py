@@ -116,7 +116,8 @@ def add_routes(app):
     def do_the_magic():
         file_url = request.json.get('fileUrl', None)
         print("file_url", file_url)
-        keywords = []
+        text = request.json.get('text', '')
+        keywords, formatted_text = extract_keywords_without_quotes(text)
 
         if file_url:
             # Download the file from the URL
@@ -127,8 +128,6 @@ def add_routes(app):
             else:
                 return jsonify({"error": "Failed to download the file from the provided URL"}), 400
         else:
-            text = request.json.get('text', '')
-            keywords, formatted_text = extract_keywords_without_quotes(text)
             emb = SYNC_ENGINE.indexer.encode_prompt(formatted_text, normalize=True)
 
         results = emb_to_list(emb)

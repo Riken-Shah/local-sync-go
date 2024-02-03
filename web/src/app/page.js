@@ -32,13 +32,15 @@ function setupDefaultVisibleImages() {
 }
 
 
-async function performSearch(inferenceAPI, search, setResult, setSearchPrompt, loadingModelOnOpen, loadingModelOnClose) {
+async function performSearch(inferenceAPI, search, searchPrompt, setResult, setSearchPrompt, loadingModelOnOpen, loadingModelOnClose) {
     const type = isValidURL(search) ? "image" : "text";
     const body = {
+        "text": searchPrompt,
         [type === "text" ? "text" : "fileUrl"]: search,
-    };
 
-    type  === "text" ? setSearchPrompt(search): setSearchPrompt("")
+    };
+    // Avoid reseting the search prompt cuz image search can use tags to minimize the search
+    // type  === "text" ? setSearchPrompt(search): setSearchPrompt("")
 
     const headers = {
         "Content-Type": "application/json",
@@ -123,7 +125,7 @@ function Home() {
     useEffect(() => {
         if (search !== null && inferenceAPI && user) {
             setVisibleImages(setupDefaultVisibleImages())
-            performSearch(inferenceAPI, search, setImages, setSearch, loadingModelOnOpen, loadingModelOnClose);
+            performSearch(inferenceAPI, search, searchPrompt, setImages, setSearch, loadingModelOnOpen, loadingModelOnClose);
         }
     }, [search, inferenceAPI, user]);
 
