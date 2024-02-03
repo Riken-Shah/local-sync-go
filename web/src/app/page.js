@@ -144,10 +144,11 @@ function Home() {
 
     useEffect(() => {
         if (typeof window !== 'undefined' && window.localStorage) {
-            let inferenceAPI = localStorage.getItem('inferenceAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
-            let imageAPI = localStorage.getItem('imageAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
-            setInferenceAPI(inferenceAPI);
-            setImageAPI(imageAPI);
+            const liveAPI = "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
+            // let inferenceAPI = localStorage.getItem('inferenceAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
+            // let imageAPI = localStorage.getItem('imageAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
+            setInferenceAPI(liveAPI);
+            setImageAPI(liveAPI);
         }
     }, []);
 
@@ -192,7 +193,7 @@ function Home() {
             </Modal>
 
             {/* Settings Modal */}
-            <Modal isOpen={settingsModalOpen} onOpenChange={settingsModalOnOpen} backdrop="blur">
+            <Modal isOpen={settingsModalOpen} onOpenChange={settingsModalOnOpen}  backdrop="blur">
                 <ModalContent>
                     {(onClose) => (
                         <>
