@@ -136,7 +136,7 @@ def add_routes(app):
 
         print("Searching for: ", query, keywords)
 
-        res = SYNC_ENGINE.milvus.search(query, keywords, 50)
+        res = SYNC_ENGINE.milvus.search(query, keywords, 1000)
 
         result_dict = []
         for hits_i, hits in enumerate(res):
@@ -156,8 +156,8 @@ def add_routes(app):
 
     @app.route(str(IMAGES_PREFIX_URL / '<path:path>'), methods=["GET", "POST"])
     def send_image(path):
-        print("path for image", path.replace('C:/Users/Aadi/Desktop/riken/local-sync-go/', ""))
-        return send_from_directory("/Volumes/SSD/SyncEngine/", path.replace('C:/Users/Aadi/Desktop/riken/', ""))
+        print("path for image", path.replace('C:/Users/Aadi/Desktop/riken/local-sync-go/',""))
+        return send_from_directory("C:/Users/Aadi/Desktop/riken/local-sync-go/",  path.replace('C:/Users/Aadi/Desktop/riken/',""))
 
     @app.route(str(THUMBS_PREFIX_URL / '<path:path>'))
     def send_thumb(path):
@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
     app = Flask(
         __name__,
-        static_folder=str("/Volumes/SSD/SyncEngine/.local/thumbnails3"),
+        static_folder=str('C:/Users/Aadi/Desktop/riken/'),
         static_url_path="/static")
 
 
@@ -214,18 +214,18 @@ if __name__ == '__main__':
     # print("Root path: ", root_path)
 
     cache_dir = os.getenv("CACHE_DIR", "./.cache")
-    SYNC_ENGINE = SyncDir("/Volumes/SSD/SyncEngine/.local/thumbnails3",
+    SYNC_ENGINE = SyncDir("C:\\Users\\Aadi\\Desktop\\riken\\local-sync-go\\.local\\thumbnails3",
                           # args.emb_dir, args.json_file,
                           # collection_name=args.collection_name,
                           # cache_dir=args.cache_dir,
                           # milvus_uri=args.milvus_uri, milvus_username=args.milvus_username,
                           # milvus_password=args.milvus_password)
-                          collection_name="mvp1",
-                          cache_dir="/Volumes/SSD/SyncEngine/.cache",
+                          collection_name="mvp0",
+                          cache_dir="C:\\Users\\Aadi\\Desktop\\riken\\local-sync-go\\.cache",
                           milvus_uri="https://in03-9e3738b111c9d0a.api.gcp-us-west1.zillizcloud.com",
                           milvus_username="db_4e728d395bbf9d3",
                           milvus_password="hQ9$w9F4Q6FyQry",
-                          embedding_folder="/Volumes/SSD/SyncEngine/.local/embds3",
+                          embedding_folder="C:\\Users\\Aadi\\Desktop\\riken\\local-sync-go\\.local\\embds3",
                           json_file="")
 
     print(SYNC_ENGINE.milvus)

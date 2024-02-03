@@ -153,7 +153,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 					continue
 				}
 				fnames = append(fnames, doc.FilePath)
-				foldersName := strings.Split(doc.FilePath, "/")
+				foldersName := strings.Split(doc.FilePath, "\\")
 				fileName := strings.Split(strings.Replace(filepath.Base(doc.FilePath), filepath.Ext(doc.FilePath), "", 0), "-")
 
 				keywordsStringArray := append([]string{}, foldersName...)
