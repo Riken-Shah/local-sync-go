@@ -144,8 +144,8 @@ function Home() {
 
     useEffect(() => {
         if (typeof window !== 'undefined' && window.localStorage) {
-            let inferenceAPI = localStorage.getItem('inferenceAPI') || "https://toltlb-ip-122-187-218-226.tunnelmole.net";
-            let imageAPI = localStorage.getItem('imageAPI') || "https://toltlb-ip-122-187-218-226.tunnelmole.net";
+            let inferenceAPI = localStorage.getItem('inferenceAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
+            let imageAPI = localStorage.getItem('imageAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
             setInferenceAPI(inferenceAPI);
             setImageAPI(imageAPI);
         }
