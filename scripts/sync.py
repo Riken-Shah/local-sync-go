@@ -31,17 +31,18 @@ class SyncDir:
         print(f"Torch will use self.device: {self.device}")
 
         self.rows_dict = {}
-        with open(json_file, 'r',encoding="utf-8") as f:
-            r = f.read()
-            rows = json.loads(r.replace('\\"', '"').replace('\\\\"', '\\"'))
-            print(f"ros is {len(rows)}")
-            for row in rows:
-                # file_name = Path(".local\\thumbnails2", os.path.basename(row["metadata"]["file_path"].split(".")[0] + ".jpeg"))
-                # thumbnail_path = file_name
-                thumbnail_path = row["thumbnail_path"]
-                # thumbnail_path = ".local\\thumbnails2\\" + row["thumbnail_path"]
-                metadata = row["metadata"]
-                self.rows_dict[thumbnail_path] = metadata
+        if json_file != "":
+            with open(json_file, 'r',encoding="utf-8") as f:
+                r = f.read()
+                rows = json.loads(r.replace('\\"', '"').replace('\\\\"', '\\"'))
+                print(f"ros is {len(rows)}")
+                for row in rows:
+                    # file_name = Path(".local\\thumbnails2", os.path.basename(row["metadata"]["file_path"].split(".")[0] + ".jpeg"))
+                    # thumbnail_path = file_name
+                    thumbnail_path = row["thumbnail_path"]
+                    # thumbnail_path = ".local\\thumbnails2\\" + row["thumbnail_path"]
+                    metadata = row["metadata"]
+                    self.rows_dict[thumbnail_path] = metadata
 
         # Indexer
         self.indexer = ImagesIndexer(do_rotate_images=False, cache_dir=cache_dir, device=self.device)

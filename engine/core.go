@@ -71,25 +71,25 @@ func BeginOrResume(rootFilePath string) error {
 			}
 		}
 	}
-	log.Println("------- Generate Thumbnails --------")
-	// thumbnailPath := filepath.Join(".local", "thumbnails3")
-	// err = GenerateThumbnails(SyncProcessID, thumbnailPath)
-	// if err != nil {
-	// 	log.Printf("err in thumbnail generations: %v", err)
-	// 	return err
-	// }
-	// log.Println("------- Generate Thumbnails Completed --------")
-	// log.Println("------- Generate Embeddings --------")
-	// cacheFolder := filepath.Join(".cache")
-	// file.Reset()
-	// err = GenerateEmbeddings(SyncProcessID, collectionName, milvusUri, milvusUsername, milvusPassword, cacheFolder)
-	// if err != nil {
-	// 	return err
-	// }
-	// log.Println("------- Generate Embeddings Completed --------")
+	//log.Println("------- Generate Thumbnails --------")
+	//thumbnailPath := filepath.Join(".local", "thumbnails3")
+	//err = GenerateThumbnails(SyncProcessID, thumbnailPath)
+	//if err != nil {
+	//	log.Printf("err in thumbnail generations: %v", err)
+	//	return err
+	//}
+	//log.Println("------- Generate Thumbnails Completed --------")
+	//log.Println("------- Generate Embeddings --------")
+	//cacheFolder := filepath.Join(".cache")
+	//file.Reset()
+	//err = GenerateEmbeddings(SyncProcessID, collectionName, milvusUri, milvusUsername, milvusPassword, cacheFolder)
+	//if err != nil {
+	//	return err
+	//}
+	log.Println("------- Generate Embeddings Completed --------")
 	log.Println("------- Sync Milvus --------")
 	file.Reset()
-	embFolder := filepath.Join(".local", "embs2")
+	embFolder := filepath.Join(".local", "embs3")
 	err = SyncMilvus(SyncProcessID, milvusUri, milvusUsername, milvusPassword, collectionName, embFolder)
 	log.Println("------- Sync Milvus Completed --------")
 	log.Println("------- All Process Completed --------")

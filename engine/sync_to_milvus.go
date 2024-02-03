@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/kshedden/gonpy"
@@ -18,10 +19,21 @@ import (
 )
 
 type Metadata struct {
-	Width     string `json:"width"`
-	Height    string `json:"height"`
-	Format    string `json:"format"`
-	Thumbnail string `json:"thumbnail"`
+	Width     string   `json:"width"`
+	Height    string   `json:"height"`
+	Format    string   `json:"format"`
+	Thumbnail string   `json:"thumbnail"`
+	Keywords  []string `json:"keywords"`
+}
+
+func stringSliceToBytes(inputStrings []string) [][]byte {
+	// Convert each string to bytes and store in a slice
+	var bytesResults [][]byte
+	for _, s := range inputStrings {
+		bytesResults = append(bytesResults, []byte(s))
+	}
+
+	return bytesResults
 }
 
 func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath string) error {
@@ -62,22 +74,24 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 					Name:     "embedding",
 					DataType: entity.FieldTypeFloatVector,
 					TypeParams: map[string]string{
-						entity.TypeParamDim: "512",
+						entity.TypeParamDim: "1024",
 					},
 				},
+				entity.NewField().WithName("keywords").WithDataType(entity.FieldTypeArray).WithElementType(entity.FieldTypeVarChar).WithMaxLength(100).WithMaxCapacity(50),
 				{
 					Name:     "metadata",
 					DataType: entity.FieldTypeJSON,
 				},
 			},
 		}
+
 		err = c.CreateCollection(ctx, schema, 1) // only 1 shard
 		if err != nil {
 			log.Fatal("failed to create collection:", err.Error())
 		}
 
 		// Now add index
-		idx, err := entity.NewIndexFlat(entity.L2)
+		idx, err := entity.NewIndexFlat(entity.COSINE)
 		if err != nil {
 			log.Fatal("fail to create ivf flat index:", err.Error())
 		}
@@ -104,6 +118,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 
 		fnames := make([]string, 0)
 		embds := make([][]float32, 0)
+		keywords := make([][][]byte, 0)
 		metadata := make([][]byte, 0)
 
 		fmt.Println("total docs found: ", len(docs))
@@ -134,6 +149,14 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 					continue
 				}
 				fnames = append(fnames, doc.FilePath)
+				foldersName := strings.Split(doc.FilePath, "/")
+				fileName := strings.Split(strings.Replace(filepath.Base(doc.FilePath), filepath.Ext(doc.FilePath), "", 0), "-")
+
+				keywordsStringArray := append([]string{}, foldersName...)
+				keywordsStringArray = append(keywordsStringArray, fileName...)
+				keywordsStringArray = append(keywordsStringArray, filepath.Ext(doc.FilePath)[1:])
+
+				keywords = append(keywords, stringSliceToBytes(keywordsStringArray))
 				metadata = append(metadata, jsonByes)
 				embds = append(embds, data)
 			}
@@ -141,14 +164,15 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 
 		fnameCol := entity.NewColumnVarChar("fname", fnames)
 		metadataCol := entity.NewColumnJSONBytes("metadata", metadata)
-		embCol := entity.NewColumnFloatVector("embedding", 512, embds)
+		keywordsCol := entity.NewColumnVarCharArray("keywords", keywords)
+		embCol := entity.NewColumnFloatVector("embedding", 1024, embds)
 
 		log.Println("fname: ", len(fnames), "meta: ", len(metadata), "em: ", len(embds))
 		if len(fnames) == 0 {
 			continue
 		}
 		// insert into default partition
-		_, err = c.Upsert(ctx, collectionName, "", fnameCol, metadataCol, embCol)
+		_, err = c.Upsert(ctx, collectionName, "", fnameCol, metadataCol, embCol, keywordsCol)
 		if err != nil {
 			log.Fatal("failed to insert film data:", err.Error())
 		}

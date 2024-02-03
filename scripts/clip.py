@@ -86,7 +86,7 @@ class ImagesIndexer:
     def load_if_not_loaded(self):
         if self.model is None:
             print("Loading CLIP model...")
-            model, _, preprocess = open_clip.create_model_and_transforms("ViT-L-14", pretrained="openai",
+            model, _, preprocess = open_clip.create_model_and_transforms('hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K',
                                                                          cache_dir=self.cache_dir, device=self.device)
             # model, _, preprocess = open_clip.create_model_and_transforms("ViT-L-14", pretrained="openai", cache_dir=self.cache_dir, device=self.device)
             # ViT - L - 14 / openai
@@ -154,7 +154,9 @@ class ImagesIndexer:
                     self.model.encode_image(torch.rot90(images, rotation, [-2, -1]))
                     for rotation in self.rotations
                 ], 0).mean(0).cpu().float().numpy()
-                emb_images /= np.linalg.norm(emb_images, axis=-1, keepdims=True)
+
+            # emb_images = em.concatenate(self.index)
+            emb_images /= np.linalg.norm(emb_images, axis=-1, keepdims=True)
 
             # to_pil_transform = transforms.ToPILImage()
 
@@ -200,7 +202,8 @@ class ImagesIndexer:
             yield fname.relative_to(self.images_path)
 
     def encode_prompt(self, prompt, normalize=False):
-        tokenizer = open_clip.get_tokenizer('ViT-L-14')
+        # tokenizer = open_clip.get_tokenizer('ViT-L-14')
+        tokenizer = open_clip.get_tokenizer('hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K')
         text = tokenizer([prompt]).to(self.device)
         with torch.no_grad():
             emb_text = self.model.encode_text(text).float()
