@@ -14,13 +14,15 @@ import {sendLog} from "@/app/firebase";
 import {imageSearch} from "@/app/search";
 import {useRouter} from "next/navigation";
 
-export function ImageGrid({ visibleImages, search, setVisibleImages, images, user, imageAPI, loadingModalOnOpen}) {
+export function ImageGrid({ visibleImages, search, setVisibleImages, images, user, imageAPI, loadingModalOnOpen, updateTags}) {
   const router = useRouter()
   const loadMoreImages = () => {
     // Increase the number of visible images by 10 (or adjust as needed)
     setVisibleImages((prevVisibleImages) => prevVisibleImages + 10);
     sendLog("more-images", {search})
   };
+
+  const [updatedTags, setTags] = useState("")
 
   const performImageSearch = ((blob) => {
     loadingModalOnOpen()
@@ -33,9 +35,10 @@ export function ImageGrid({ visibleImages, search, setVisibleImages, images, use
       {images &&
         images.slice(0, visibleImages).map(
           ({
-            id: photo_id,
             photo_url,
             thumbnail_url,
+              manual_keywords,
+              ext,
             //   photo_image_url,
             //   photo_aspect_ratio,
             //   photo_width,
@@ -45,7 +48,7 @@ export function ImageGrid({ visibleImages, search, setVisibleImages, images, use
             //   ai_description,
             similarity,
           }) => (
-            <div className=" block mb-2 relative" key={thumbnail_url}>
+            <div className=" block mb-2 relative" key={photo_url}>
               <Image
                 alt="Woman listing to music"
                 className="object-cover mb-4"
@@ -94,7 +97,7 @@ export function ImageGrid({ visibleImages, search, setVisibleImages, images, use
                 </Button>
               </div>
 
-              <div className="absolute bottom-2 right-2 group-hover:visible invisible">
+              <div className="absolute bottom-2 right-2 group-hover:visible ">
                 <Popover placement="top" showArrow offset={10} classNames="">
                   <PopoverTrigger onClick={() => {sendLog("img_more_options", {thumbnail_url})}}>
                     <Button className="bg-gradient-to-tr from-pink-500 to-yellow-500">
@@ -107,39 +110,40 @@ export function ImageGrid({ visibleImages, search, setVisibleImages, images, use
                         <div className="mt-2 flex flex-col gap-2 w-full">
                           <Button
                             // defaultValue="100%"
-                            label="Width"
                             // size="sm"
                             variant="bordered"
+                            onPress={(e) =>   navigator.clipboard.writeText(photo_url)}
                           >
-                            {" "}
-                            Download Image{" "}
+                            Copy Path
                           </Button>
                           <Input
-                            defaultValue={photo_id}
-                            label="File ID"
+                              defaultValue={photo_url}
+                              label="Path"
+                              size="sm"
+                              disabled
+                              variant="bordered"
+                          />
+                          <Input
+                            // defaultValue={tags === ""? manual_keywords: tags}
+                            value={updatedTags === ""? manual_keywords: updatedTags}
+                            label="Keywords"
+                            size="sm"
+                            variant="bordered"
+                            onChange={(e) => setTags(e.target.value)}
+                          />
+                          <Input
+                            defaultValue={ext}
+                            label="File Format"
                             size="sm"
                             disabled
                             variant="bordered"
                           />
-                          <Input
-                            defaultValue={photo_url}
-                            label="File Path"
-                            size="sm"
-                            disabled
-                            variant="bordered"
-                          />
-                          <Input
-                            defaultValue="24px"
-                            label="Height"
-                            size="sm"
-                            variant="bordered"
-                          />
-                          <Input
-                            defaultValue="30px"
-                            label="Max. height"
-                            size="sm"
-                            variant="bordered"
-                          />
+                       <Button variant="bordered" onPress={(e) => {
+                            const tags = updatedTags.split(",")
+                            tags.forEach((f) => f.trim())
+                            console.log(tags)
+                            updateTags(photo_url, tags.length ? tags.filter((f) => f !== "") : [])
+                          }}> Save </Button>
                         </div>
                       </div>
                     )}

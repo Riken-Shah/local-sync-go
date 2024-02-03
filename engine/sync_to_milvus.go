@@ -57,9 +57,10 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 		// collection with same name exist, clean up mess
 		// define collection schema, see film.csv
 		schema := &entity.Schema{
-			CollectionName: collectionName,
-			Description:    "this is the example collection for insert and search",
-			AutoID:         false,
+			EnableDynamicField: true,
+			CollectionName:     collectionName,
+			Description:        "this is the example collection for insert and search",
+			AutoID:             false,
 			Fields: []*entity.Field{
 				{
 					Name:     "fname",
@@ -77,7 +78,9 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 						entity.TypeParamDim: "1024",
 					},
 				},
-				entity.NewField().WithName("keywords").WithDataType(entity.FieldTypeArray).WithElementType(entity.FieldTypeVarChar).WithMaxLength(100).WithMaxCapacity(50),
+				entity.NewField().WithName("keywords").WithDataType(entity.FieldTypeArray).WithElementType(entity.FieldTypeVarChar).WithMaxLength(300).WithMaxCapacity(50),
+				entity.NewField().WithName("manual_keywords").WithDataType(entity.FieldTypeArray).WithElementType(entity.FieldTypeVarChar).WithMaxLength(50).WithMaxCapacity(50),
+
 				{
 					Name:     "metadata",
 					DataType: entity.FieldTypeJSON,
@@ -85,7 +88,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 			},
 		}
 
-		err = c.CreateCollection(ctx, schema, 1) // only 1 shard
+		err = c.CreateCollection(ctx, schema, 1)
 		if err != nil {
 			log.Fatal("failed to create collection:", err.Error())
 		}
@@ -119,6 +122,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 		fnames := make([]string, 0)
 		embds := make([][]float32, 0)
 		keywords := make([][][]byte, 0)
+		manualKeywords := make([][][]byte, 0)
 		metadata := make([][]byte, 0)
 
 		fmt.Println("total docs found: ", len(docs))
@@ -157,6 +161,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 				keywordsStringArray = append(keywordsStringArray, filepath.Ext(doc.FilePath)[1:])
 
 				keywords = append(keywords, stringSliceToBytes(keywordsStringArray))
+				manualKeywords = append(manualKeywords, stringSliceToBytes([]string{}))
 				metadata = append(metadata, jsonByes)
 				embds = append(embds, data)
 			}
@@ -165,6 +170,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 		fnameCol := entity.NewColumnVarChar("fname", fnames)
 		metadataCol := entity.NewColumnJSONBytes("metadata", metadata)
 		keywordsCol := entity.NewColumnVarCharArray("keywords", keywords)
+		manualKeywordsCol := entity.NewColumnVarCharArray("manual_keywords", manualKeywords)
 		embCol := entity.NewColumnFloatVector("embedding", 1024, embds)
 
 		log.Println("fname: ", len(fnames), "meta: ", len(metadata), "em: ", len(embds))
@@ -172,7 +178,7 @@ func SyncMilvus(syncID, URI, username, password, collectionName, embFolderPath s
 			continue
 		}
 		// insert into default partition
-		_, err = c.Upsert(ctx, collectionName, "", fnameCol, metadataCol, embCol, keywordsCol)
+		_, err = c.Upsert(ctx, collectionName, "", fnameCol, metadataCol, embCol, keywordsCol, manualKeywordsCol)
 		if err != nil {
 			log.Fatal("failed to insert film data:", err.Error())
 		}

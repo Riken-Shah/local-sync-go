@@ -6,14 +6,16 @@ from pymilvus import connections, utility
 
 class Milvus:
     def __init__(self, milvus_uri, user, password, collection_name):
-        # connections.connect("default",
-        #                     uri=milvus_uri,
-        #                     user=user,
-        #                     password=password)
+        connections.connect("default",
+                            uri=milvus_uri,
+                            token="95d55a77bc7de1d9734368f7272f8d5db5672cbba7b62536d572e37c0ac9acad029c228e3ed4a5db0c1e6aafec399f730cc0fe8c",
+                            # user=user,
+                            # password=password)
+                            )
 
         self.DIM = 512  # dimension of vector
         self._collection = None
-        # self._collection = self.setup_collection(collection_name)
+        self._collection = self.setup_collection(collection_name)
         print("Successfully connected to Milvus")
 
     def setup_collection(self, collection_name) -> Collection:
@@ -23,7 +25,7 @@ class Milvus:
             return collection
 
         image_vector = FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.DIM,
-                                   description="vector which represents the image",)
+                                   description="vector which represents the image", )
         fname = FieldSchema(name="fname", dtype=DataType.VARCHAR, max_length=512,
                             description="path of the image", is_primary=True, auto_id=False)
 
@@ -59,11 +61,14 @@ class Milvus:
         print("upserted records to milvus", len(records))
         self._collection.upsert(records)
 
-    def save(self):
-        self._collection.flush()
+    def get_one(self, fname):
+        return self._collection.query(expr=f"fname == '{fname}'", limit=1,
+                                      output_fields=["fname", "metadata", "keywords", "embedding"])
 
-    def search(self, vector, top_n=5, output_fields=None):
+    def search(self, vector, keywords, top_n=5, output_fields=None):
         if output_fields is None:
-            output_fields = ["fname", "metadata"]
+            output_fields = ["fname", "metadata", "manual_keywords"]
+        query = "" if len(
+            keywords) == 0 else f"array_contains_any(keywords, {keywords}) || array_contains_any(manual_keywords, {keywords})"
         return self._collection.search(vector, anns_field="embedding", param={"nprobe": 256}, limit=top_n,
-                                       output_fields=output_fields)
+                                       output_fields=output_fields, expr=query)

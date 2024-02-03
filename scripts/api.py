@@ -34,6 +34,39 @@ def emb_to_list(emb):
     return list(map(round_float, emb))
 
 
+def extract_keywords_without_quotes(input_string):
+    keywords = []
+
+    start_index = 0
+    result_string = input_string
+
+    while True:
+        # Find the next occurrence of double quotes
+        start_quote = input_string.find('"', start_index)
+
+        if start_quote == -1:
+            break
+
+        # Find the end of the quoted string
+        end_quote = input_string.find('"', start_quote + 1)
+
+        if end_quote == -1:
+            break
+
+        # Extract the content inside double quotes
+        keywords_string = input_string[start_quote + 1:end_quote]
+
+        # Split the content by comma and remove leading/trailing whitespaces
+        keywords.extend(keyword.strip() for keyword in keywords_string.split(','))
+
+        result_string = result_string.replace(keywords_string, "")
+
+        # Move the start_index to the next position after the current quoted string
+        start_index = end_quote + 1
+
+    return keywords, result_string.replace('"', "")
+
+
 ################ Flask app ###############
 
 
@@ -64,10 +97,26 @@ def add_routes(app):
 
         return jsonify(results)
 
+    @app.route('/tags', methods=['POST'])
+    def update_tags():
+        data = request.get_json()
+        fname = data["fname"]
+        tags = data["tags"]
+        print("updating", data)
+        res = SYNC_ENGINE.milvus.get_one(fname)
+        if len(res) == 1:
+            print(res[0])
+            SYNC_ENGINE.milvus.upsert([{**res[0], "fname": fname, "manual_keywords": tags, }])
+        else:
+            return jsonify({"failed"})
+
+        return jsonify({"success": True})
+
     @app.route('/search', methods=['POST'])
     def do_the_magic():
         file_url = request.json.get('fileUrl', None)
         print("file_url", file_url)
+        keywords = []
 
         if file_url:
             # Download the file from the URL
@@ -79,23 +128,26 @@ def add_routes(app):
                 return jsonify({"error": "Failed to download the file from the provided URL"}), 400
         else:
             text = request.json.get('text', '')
-            emb = SYNC_ENGINE.indexer.encode_prompt(text, normalize=True)
+            keywords, formatted_text = extract_keywords_without_quotes(text)
+            emb = SYNC_ENGINE.indexer.encode_prompt(formatted_text, normalize=True)
 
         results = emb_to_list(emb)
         query = np.array(results, dtype=np.float32)[np.newaxis]
 
-        print("Searching for: ", query)
+        print("Searching for: ", query, keywords)
 
-        res = SYNC_ENGINE.milvus.search(query, 50)
+        res = SYNC_ENGINE.milvus.search(query, keywords, 50)
 
         result_dict = []
         for hits_i, hits in enumerate(res):
             for hit_i, hit in enumerate(hits):
+                print()
                 pre_result_dict = {
-                    "id": hit.entity.get('id'),
                     "photo_url": str(IMAGES_PREFIX_URL / hit.entity.get('fname')),
                     'thumbnail_url': str(IMAGES_PREFIX_URL / hit.entity.get('metadata')["thumbnail"]),
-                    'similarity': hit.distance
+                    'ext': str(hit.entity.get("metadata")["format"]),
+                    'similarity': hit.distance,
+                    "manual_keywords": list(hit.entity.get("manual_keywords"))
                 }
 
                 result_dict.append(pre_result_dict)
@@ -104,8 +156,8 @@ def add_routes(app):
 
     @app.route(str(IMAGES_PREFIX_URL / '<path:path>'), methods=["GET", "POST"])
     def send_image(path):
-        print("path for image", path.replace('C:/Users/Aadi/Desktop/riken/local-sync-go/',""))
-        return send_from_directory("/Volumes/SSD/SyncEngine/",  path.replace('C:/Users/Aadi/Desktop/riken/',""))
+        print("path for image", path.replace('C:/Users/Aadi/Desktop/riken/local-sync-go/', ""))
+        return send_from_directory("/Volumes/SSD/SyncEngine/", path.replace('C:/Users/Aadi/Desktop/riken/', ""))
 
     @app.route(str(THUMBS_PREFIX_URL / '<path:path>'))
     def send_thumb(path):
@@ -153,6 +205,8 @@ if __name__ == '__main__':
                    if name.lower() not in excluded_headers]
         response = Response(resp.content, resp.status_code, headers)
         return response
+
+
     # root_path = os.getenv("ROOT_PATH", root_path)
     # collection_name = os.getenv("COLLECTION_NAME", collection_name)
     # img_dir = os.getenv("IMG_DIR", img_dir)
@@ -163,12 +217,12 @@ if __name__ == '__main__':
     SYNC_ENGINE = SyncDir("/Volumes/SSD/SyncEngine/.local/thumbnails3",
                           # args.emb_dir, args.json_file,
                           # collection_name=args.collection_name,
-                         # cache_dir=args.cache_dir,
-                         # milvus_uri=args.milvus_uri, milvus_username=args.milvus_username,
-                         # milvus_password=args.milvus_password)
+                          # cache_dir=args.cache_dir,
+                          # milvus_uri=args.milvus_uri, milvus_username=args.milvus_username,
+                          # milvus_password=args.milvus_password)
                           collection_name="mvp1",
                           cache_dir="/Volumes/SSD/SyncEngine/.cache",
-                          milvus_uri="https://in03-4e728d395bbf9d3.api.gcp-us-west1.zillizcloud.com",
+                          milvus_uri="https://in03-9e3738b111c9d0a.api.gcp-us-west1.zillizcloud.com",
                           milvus_username="db_4e728d395bbf9d3",
                           milvus_password="hQ9$w9F4Q6FyQry",
                           embedding_folder="/Volumes/SSD/SyncEngine/.local/embds3",

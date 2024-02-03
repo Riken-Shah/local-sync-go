@@ -60,6 +60,31 @@ async function performSearch(inferenceAPI, search, setResult, setSearchPrompt, l
     }
 }
 
+async function updateTags(inferenceAPI, fname, tags, loadingModelOnOpen, loadingModelOnClose) {
+    const body = {
+        fname,
+        tags
+    }
+    const headers = {
+        "Content-Type": "application/json",
+    };
+
+
+    try {
+        loadingModelOnOpen();
+        const response = await axios.post(inferenceAPI + "/tags", JSON.stringify(body), { headers });
+
+        if (response.status === 200) {
+        } else {
+            console.log("Something went wrong in search call:", response.data);
+        }
+    } catch (error) {
+        console.log("Error in search call:", error);
+    } finally {
+        loadingModelOnClose();
+    }
+
+}
 function Home() {
     // Search
     const searchParams = useSearchParams();
@@ -140,7 +165,7 @@ function Home() {
                 </Button>
             </div>
 
-            <ImageGrid user={user} search={search} loadingModalOnOpen={loadingModelOnOpen} visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={images} imageAPI={imageAPI} />
+            <ImageGrid user={user} search={search} loadingModalOnOpen={loadingModelOnOpen} visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={images} imageAPI={imageAPI} updateTags={(photo_url, tags) => updateTags(inferenceAPI, photo_url, tags, loadingModelOnOpen, loadingModelOnClose)} />
 
             {/* Auth Modal */}
             <Modal isOpen={authModelOpen} onOpenChange={authModelOnOpen} backdrop={"blur"}>
