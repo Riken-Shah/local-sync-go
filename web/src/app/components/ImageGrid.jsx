@@ -14,7 +14,11 @@ import {sendLog} from "@/app/firebase";
 import {imageSearch} from "@/app/search";
 import {useRouter} from "next/navigation";
 
-export function ImageGrid({ visibleImages, search, setVisibleImages, images, user, imageAPI, loadingModalOnOpen, updateTags}) {
+
+function photoURLToLocalURL(nasDrive, photoURL) {
+  return photoURL.replace("/images/S:", `${nasDrive}:`)
+}
+export function ImageGrid({ visibleImages, search, setVisibleImages, images, user, imageAPI, loadingModalOnOpen, updateTags, nasDrive}) {
   const router = useRouter()
   function  loadMoreImages  ()  {
     setVisibleImages((prevVisibleImages) => prevVisibleImages + 10);
@@ -135,12 +139,12 @@ export function ImageGrid({ visibleImages, search, setVisibleImages, images, use
                             // defaultValue="100%"
                             // size="sm"
                             variant="bordered"
-                            onPress={(e) =>   navigator.clipboard.writeText(photo_url)}
+                            onPress={(e) =>   navigator.clipboard.writeText(photoURLToLocalURL(nasDrive, photo_url))}
                           >
                             Copy Path
                           </Button>
                           <Input
-                              defaultValue={photo_url}
+                              defaultValue={photoURLToLocalURL(nasDrive, photo_url)}
                               label="Path"
                               size="sm"
                               disabled

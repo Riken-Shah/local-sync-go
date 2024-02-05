@@ -101,6 +101,7 @@ function Home() {
     const [inferenceAPI, setInferenceAPI] = useState("");
     const [imageAPI, setImageAPI] = useState("");
     const [user, setUser] = useState(null);
+    const [nasDrive, setNasDrive] = useState("S");
 
     // Loader state
     const [loadingCompleted, setLoadingCompleted] = useState(0);
@@ -168,7 +169,7 @@ function Home() {
                 </Button>
             </div>
 
-            <ImageGrid user={user} search={search} loadingModalOnOpen={loadingModelOnOpen} visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={images} imageAPI={imageAPI} updateTags={(photo_url, tags) => updateTags(inferenceAPI, photo_url, tags, loadingModelOnOpen, loadingModelOnClose)} />
+            <ImageGrid user={user} search={search} nasDrive={nasDrive}  loadingModalOnOpen={loadingModelOnOpen} visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={images} imageAPI={imageAPI} updateTags={(photo_url, tags) => updateTags(inferenceAPI, photo_url, tags, loadingModelOnOpen, loadingModelOnClose)} />
 
             {/* Auth Modal */}
             <Modal isOpen={authModelOpen} onOpenChange={authModelOnOpen} backdrop={"blur"}>
@@ -225,6 +226,13 @@ function Home() {
                                     label="User ID"
                                     value={user?.uid || ""}
                                     disabled
+                                />
+                                <Input
+                                    isRequired
+                                    type="text"
+                                    label="NAS Drive"
+                                    value={nasDrive}
+                                    onChange={(e) => setNasDrive(e.target.value)}
                                 />
                                 <Button color="danger" onPress={handleReset}>
                                     Reset Everything
