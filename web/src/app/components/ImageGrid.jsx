@@ -1,6 +1,6 @@
 // import Image from 'next/image'
 import { blurHashToDataURL } from "../utils.js";
-import React, {useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 
 import {
   Image,
@@ -16,8 +16,7 @@ import {useRouter} from "next/navigation";
 
 export function ImageGrid({ visibleImages, search, setVisibleImages, images, user, imageAPI, loadingModalOnOpen, updateTags}) {
   const router = useRouter()
-  const loadMoreImages = () => {
-    // Increase the number of visible images by 10 (or adjust as needed)
+  function  loadMoreImages  ()  {
     setVisibleImages((prevVisibleImages) => prevVisibleImages + 10);
     sendLog("more-images", {search})
   };
@@ -28,6 +27,30 @@ export function ImageGrid({ visibleImages, search, setVisibleImages, images, use
     loadingModalOnOpen()
     imageSearch(router, user.email, blob)
   })
+
+  const showMoreRef = useRef()
+  const oververOptions = {
+    root: null,
+    rootMargin: "0px",
+    threshold: 1.0
+  }
+
+
+  useEffect(() => {
+    const observer = new IntersectionObserver( () =>   setVisibleImages((prevVisibleImages) => {
+      sendLog("more-images", {search})
+
+      return prevVisibleImages + 5
+    }), oververOptions)
+    if (showMoreRef.current) {
+      observer.observe(showMoreRef.current)
+    }
+    return () => {
+      if(showMoreRef.current) {
+        observer.unobserve(showMoreRef.current)
+      }
+    }
+  }, [showMoreRef]);
 
   return (
       <div>
@@ -154,11 +177,11 @@ export function ImageGrid({ visibleImages, search, setVisibleImages, images, use
           )
         )}
     </div>
-        {images && images.length > visibleImages && (
-            <div className="block text-center mt-2 mb-2">
-              <Button onClick={loadMoreImages}>Show More</Button>
+        {/*{images && images.length > visibleImages && (*/}
+            <div className={`block text-center mt-2 mb-2 ${images && images.length > visibleImages ? "visible": "invisible"}`} ref={showMoreRef}>
+              <Button  onClick={loadMoreImages}>Show More</Button>
             </div>
-        )}
+        {/*)}*/}
       </div>
   );
 }

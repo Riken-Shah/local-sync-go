@@ -68,7 +68,12 @@ class Milvus:
     def search(self, vector, keywords, top_n=5, output_fields=None):
         if output_fields is None:
             output_fields = ["fname", "metadata", "manual_keywords"]
-        query = "" if len(
-            keywords) == 0 else f"array_contains_any(keywords, {keywords}) || array_contains_any(manual_keywords, {keywords})"
+
+        query = ""
+        for pair in keywords:
+            if query != "":
+                query += " || "
+            query += f"array_contains_all(keywords, {pair}) || array_contains_all(manual_keywords, {pair})"
+        print("query", query)
         return self._collection.search(vector, anns_field="embedding", param={"nprobe": 256}, limit=top_n,
                                        output_fields=output_fields, expr=query)

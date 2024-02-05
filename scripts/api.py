@@ -57,7 +57,7 @@ def extract_keywords_without_quotes(input_string):
         keywords_string = input_string[start_quote + 1:end_quote]
 
         # Split the content by comma and remove leading/trailing whitespaces
-        keywords.extend(keyword.strip() for keyword in keywords_string.split(','))
+        keywords.append([keyword.strip() for keyword in keywords_string.split(',')])
 
         result_string = result_string.replace(keywords_string, "")
 
