@@ -145,7 +145,7 @@ function Home() {
 
     useEffect(() => {
         if (typeof window !== 'undefined' && window.localStorage) {
-            const liveAPI = "https://289arm-ip-122-187-218-226.tunnelmole.net";
+            const liveAPI = "https://3vzfuh-ip-122-187-218-226.tunnelmole.net";
             // let inferenceAPI = localStorage.getItem('inferenceAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
             // let imageAPI = localStorage.getItem('imageAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
             setInferenceAPI(liveAPI);
