@@ -10,7 +10,7 @@ import {
   Button,
   PopoverTrigger,
 } from "@nextui-org/react";
-import {sendLog} from "@/app/firebase";
+import {  sendLog } from "../../../utils/firebase";
 import {imageSearch} from "@/app/search";
 import {useRouter} from "next/navigation";
 

@@ -1,5 +1,4 @@
-import {useRouter} from "next/navigation";
-import {fileUpload} from "@/app/upload";
+import {fileUpload} from "../../utils/upload";
 
 export function textSearch(router, prompt) {
     const param = new URLSearchParams()

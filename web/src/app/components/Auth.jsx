@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import StyledFirebaseAuth from "react-firebaseui/StyledFirebaseAuth";
-import {auth} from "../firebase"
+import {auth} from "../../../utils/firebase"
 import { GoogleAuthProvider } from "firebase/auth";
 
 
@@ -51,7 +51,7 @@ const FirebaseAuth = () => {
         <div>
             { renderAuth ? (
                 <StyledFirebaseAuth
-                    uiConfig={firebaseAuthConfig}
+                    uiConfig={{...firebaseAuthConfig, signInSuccessUrl: "/" + (new URL(document.location)).search}}
                     firebaseAuth={auth}
                 />
             ) : null}

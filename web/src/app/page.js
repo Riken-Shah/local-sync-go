@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import {  auth, sendLog, toggleAnalytics } from "./firebase";
+import {  auth, toggleAnalytics } from "../../utils/firebase";
 import { SearchBar } from "./components/SearchBar";
 import { ImageGrid } from "./components/ImageGrid";
+import { getOrgUser, createOrgUser} from "../../utils/helpers";
 import axios from "axios";
 import { SettingIcon } from "@/app/components/SettingIcon";
 import {
@@ -20,6 +21,8 @@ import {
 } from "@nextui-org/react";
 import { useSearchParams } from "next/navigation";
 import Auth from "@/app/components/Auth";
+import OrganizationModal from "@/app/components/OrganizationModal";
+import InsufficientModal from "@/app/components/InsufficientModal";
 
 function isValidURL(string) {
     const res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
@@ -87,20 +90,45 @@ async function updateTags(inferenceAPI, fname, tags, loadingModelOnOpen, loading
     }
 
 }
+
+
+async function fetchInitPostAuthenticated(orgID, setOrgUser, orgModalOnOpen) {
+    const orgUserExists = await getOrgUser()
+    setOrgUser(orgUserExists)
+    console.log(orgUserExists)
+    if(!orgUserExists) {
+        // Create initial org user, if valid org id is detected
+        if(orgID) {
+            try {
+                const orgUser = await createOrgUser(orgID)
+                setOrgUser(orgUser)
+                return
+            } catch (e){
+                console.error("something went wrong while creating org user: ", e)
+            }
+        }
+
+        // Open the org setup popup
+        orgModalOnOpen();
+    }
+}
 function Home() {
     // Search
     const searchParams = useSearchParams();
     const search = searchParams.get("search");
+    const orgSearchParam = searchParams.get("org")
 
     // For modals
     const { isOpen: settingsModalOpen, onOpen: settingsModalOnOpen, onOpenChange: settingsModalOnOpenChange } = useDisclosure();
     const { isOpen: authModelOpen, onOpen: authModelOnOpen } = useDisclosure();
     const { isOpen: loadingModelOpen, onOpen: loadingModelOnOpen, onClose: loadingModelOnClose } = useDisclosure();
+    const { isOpen: orgModalOpen, onOpen:orgModelOnOpen, onClose: orgModelOnClose } = useDisclosure();
 
     // Global state
     const [inferenceAPI, setInferenceAPI] = useState("");
     const [imageAPI, setImageAPI] = useState("");
     const [user, setUser] = useState(null);
+    const [orgUser, setOrgUser] = useState(null);
     const [nasDrive, setNasDrive] = useState("S");
 
     // Loader state
@@ -112,6 +140,20 @@ function Home() {
 
     // Used by ImageGrid.jsx
     const [visibleImages, setVisibleImages] = useState(10);
+
+    // Used by OrganizationModal.jsx
+    const [org,setOrg] = useState("")
+
+
+    useEffect(() => {
+        setOrg(orgSearchParam)
+    }, [orgSearchParam])
+
+    useEffect(() => {
+        if(user !== null) {
+            fetchInitPostAuthenticated(org, setOrgUser, orgModelOnOpen)
+        }
+    }, [user]);
 
 
     useEffect(() => {
@@ -145,11 +187,13 @@ function Home() {
 
     useEffect(() => {
         if (typeof window !== 'undefined' && window.localStorage) {
-            const liveAPI = "https://azmvil-ip-122-187-218-226.tunnelmole.net";
-            // let inferenceAPI = localStorage.getItem('inferenceAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
-            // let imageAPI = localStorage.getItem('imageAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
+            const liveAPI = "https://3d03-122-187-218-226.ngrok-free.app";
+            // // let inferenceAPI = localStorage.getItem('inferenceAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
+            // // let imageAPI = localStorage.getItem('imageAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
             setInferenceAPI(liveAPI);
             setImageAPI(liveAPI);
+            let nasStorage = localStorage.getItem("nasDrive") || "S"
+            setNasDrive(nasStorage)
         }
     }, []);
 
@@ -232,7 +276,11 @@ function Home() {
                                     type="text"
                                     label="NAS Drive"
                                     value={nasDrive}
-                                    onChange={(e) => setNasDrive(e.target.value)}
+                                    onChange={(e) => {
+                                        setNasDrive(e.target.value)
+                                        localStorage.setItem("nasDrive", e.target.value);
+
+                                    }}
                                 />
                                 <Button color="danger" onPress={handleReset}>
                                     Reset Everything
@@ -263,6 +311,9 @@ function Home() {
                     )}
                 </ModalContent>
             </Modal>
+
+            <OrganizationModal isOpen={orgModalOpen && !orgUser} onOpenChange={orgModelOnOpen}  org={org}  setOrg={setOrg} setOrgUser={setOrgUser} startLoading={loadingModelOnOpen} endLoading={loadingModelOnClose}/>
+            <InsufficientModal isOpen={orgUser && orgUser.role === 4} />
         </main>
     );
 }

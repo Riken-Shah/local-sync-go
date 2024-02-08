@@ -1,62 +1,51 @@
-// import { init } from "next-firebase-auth";
-// import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
-//
-// const initAuth = () => {
-//     init({
-//         authPageURL: "/login",
-//         appPageURL: "",
-//         // loginAPIEndpoint: "/", // required
-//         // logoutAPIEndpoint: "/", // required
-//         loginAPIEndpoint: "/api/login", // required
-//         logoutAPIEndpoint: "/api/logout", // required
-//         // firebaseAuthEmulatorHost: "localhost:9099",
-//         // Required in most cases.
-//         firebaseAdminInitConfig: {
-//             credential: {
-//                 projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-//                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-//                 // The private key must not be accesssible on the client side.
-//                 privateKey: process.env.FIREBASE_PRIVATE_KEY
-//                     ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/gm, "\n")
-//                     : undefined,
-//             },
-//             databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-//         },
-//         firebaseClientInitConfig: {
-//             apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-//             authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-//             databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-//             projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-//             storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-//             messagingSenderId:
-//             process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-//             appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-//         },
-//         cookies: {
-//             name: "NextFirebase", // required
-//             // Keys are required unless you set `signed` to `false`.
-//             // The keys cannot be accessible on the client side.
-//             keys: [
-//                 process.env.COOKIE_SECRET_CURRENT,
-//                 process.env.COOKIE_SECRET_PREVIOUS,
-//             ],
-//             httpOnly: false,
-//             maxAge: 12 * 60 * 60 * 24 * 1000, // twelve days
-//             overwrite: true,
-//             path: "/",
-//             sameSite: "strict",
-//             secure: process.env.COOKIE_SECURE, // set this to false in local (non-HTTPS) development
-//             signed: true,
-//         },
-//     });
-// };
-//
-//
-// console.log(process.env)
-// // mixpanel.init(process.env.NEXT_PUBLIC_MIXPANEL_API_KEY, {
-// //     autotrack: true,
-// //     ip: true,
-// //     inapp_link_new_window: true,
-// // });
-//
-// export default initAuth;
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics, logEvent, isSupported } from "firebase/analytics";
+import {getAuth} from "firebase/auth";
+import {getStorage} from "firebase/storage";
+import  {getFirestore} from "firebase/firestore";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: "ai-folder",
+    storageBucket: "ai-folder.appspot.com",
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+};
+
+// Initialize Firebase
+export const app = initializeApp(firebaseConfig);
+
+// analytics.log
+export const auth = getAuth(app)
+
+// export let analytics =null
+export let analytics =   null
+
+export const storage = getStorage(app)
+
+export const db = getFirestore(app)
+
+let analyticsEnabled = false
+
+export const toggleAnalytics = (enabled) => analyticsEnabled = Boolean(enabled)
+
+export const sendLog = (name, obj) => {
+    if (!analyticsEnabled) {
+        console.log("analytics is not enabled", name, obj)
+        return;
+    }
+
+    if(analytics === null) {
+        analytics = app.name && typeof window !== 'undefined' ? getAnalytics(app) : null;
+        console.log("analytics is not supported; trying to init", name, obj)
+        return;
+    }
+    logEvent(analytics, name, obj)
+}
