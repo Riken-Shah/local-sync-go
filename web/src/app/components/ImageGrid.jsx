@@ -1,3 +1,4 @@
+"use client"
 // import Image from 'next/image'
 import { blurHashToDataURL } from "../utils.js";
 import React, {useEffect, useRef, useState} from "react";
@@ -13,11 +14,53 @@ import {
 import {  sendLog } from "../../../utils/firebase";
 import {imageSearch} from "@/app/search";
 import {useRouter} from "next/navigation";
+import axios from "axios";
 
 
 function photoURLToLocalURL(nasDrive, photoURL) {
   return photoURL.replace("/images/S:", `${nasDrive}:`)
 }
+
+function fetchImageWithHeaderUsingAxios(imageUrl) {
+  const headers = {
+    'ngrok-skip-browser-warning': 'true'
+  };
+
+  return axios
+      .get(imageUrl, { headers, responseType: 'blob' })
+      .then((response) => response.data)
+      .catch((error) => {
+        console.error('Error fetching image:', error);
+        throw error;
+      });
+}
+
+function CustomImage({imageAPI, thumbnail_url}) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [blob,setBlob] = useState(null)
+
+  useEffect(() => {
+    fetchImageWithHeaderUsingAxios(`${imageAPI}${thumbnail_url}`).then((b) => {
+      setBlob(URL.createObjectURL((b)))
+      setIsLoading(false)
+    } )
+
+  }, [imageAPI]);
+
+  return (
+      <Image
+          alt="Woman listing to music"
+          className="object-cover mb-4"
+          height={400}
+          isLoading={isLoading}
+          src={blob}
+          width={400}
+          loading="eager"
+      />
+  )
+}
+
+
 export function ImageGrid({ visibleImages, search, setVisibleImages, images, user, imageAPI, loadingModalOnOpen, updateTags, nasDrive}) {
   const router = useRouter()
   function  loadMoreImages  ()  {
@@ -76,14 +119,8 @@ export function ImageGrid({ visibleImages, search, setVisibleImages, images, use
             similarity,
           }) => (
             <div className=" block mb-2 relative" key={photo_url}>
-              <Image
-                alt="Woman listing to music"
-                className="object-cover mb-4"
-                height={400}
-                src={`${imageAPI}${thumbnail_url}`}
-                width={400}
-                loading="eager"
-              />
+
+              <CustomImage thumbnail_url={thumbnail_url} imageAPI={imageAPI} />
 
               {/* // blured background */}
               <div className="absolute top-2 right-2 z-10">
