@@ -141,7 +141,7 @@ export default function App({users, currentRole, currentUser}) {
                         {/*</Dropdown>*/}
                         <Select
                             label="Role"
-                            isDisabled={user.uid === currentUser?.uid}
+                            isDisabled={user.uid === currentUser?.uid || user.role === 0}
 
 isRequired
                             onChange={(e) => {
@@ -150,7 +150,7 @@ isRequired
                             }}
                             // placeholder="Select an animal"
 
-                            disabledKeys={[0, 1, 2, 3, 4].filter((i) => i < user.role).map((o) => o.toString())}
+                            disabledKeys={[0, 1, 2, 3, 4].filter((i) => i <= parseInt(currentRole)).map((o) => o.toString())}
                             className="bg-background max-w-xs"
                             defaultSelectedKeys={[user.role.toString()]}
                         >

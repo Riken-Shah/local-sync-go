@@ -2,7 +2,7 @@
 import {getAuth, onAuthStateChanged} from "firebase/auth";
 import {toggleAnalytics} from "../../../utils/firebase";
 import {useEffect, useState} from "react";
-import UserList from "@/app/dashboard/components/Table";
+import UserList from "@/app/admin/components/Table";
 import {
     Button,
     Modal,

@@ -50,7 +50,7 @@ export async function getOrgUser(){
 
 export async function createOrgUser(orgID) {
     const snap = {
-        org_id: orgID,
+        org_id: orgID.trim(),
         user_id: auth.currentUser.uid,
         role: 4,
     }
@@ -64,7 +64,7 @@ export async function getAllOrgUsers(orgID) {
     const orgUsersSnapshot = await getDocs(orgUsersQuery);
 
     const orgUsers = [];
-
+    console.log("orgs: ", orgUsersSnapshot.docs)
     for (const doc of orgUsersSnapshot.docs) {
         const orgUserData = doc.data();
         const userId = orgUserData.user_id;
