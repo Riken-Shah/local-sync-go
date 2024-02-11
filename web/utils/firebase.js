@@ -4,6 +4,8 @@ import { getAnalytics, logEvent, isSupported } from "firebase/analytics";
 import {getAuth} from "firebase/auth";
 import {getStorage} from "firebase/storage";
 import  {getFirestore} from "firebase/firestore";
+import  {getDatabase} from "firebase/database";
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -16,7 +18,9 @@ const firebaseConfig = {
     storageBucket: "ai-folder.appspot.com",
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+    databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+
 };
 
 // Initialize Firebase
@@ -31,6 +35,8 @@ export let analytics =   null
 export const storage = getStorage(app)
 
 export const db = getFirestore(app)
+
+export const realtimeDB = getDatabase(app)
 
 let analyticsEnabled = false
 

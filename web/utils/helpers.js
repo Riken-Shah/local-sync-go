@@ -1,5 +1,7 @@
-import {db, auth} from "./firebase";
+import {db, auth, realtimeDB} from "./firebase";
 import { collection, doc, setDoc,getDoc, query, updateDoc, getDocs, where } from "firebase/firestore";
+import {  ref, set, onValue } from "firebase/database";
+
 
 const rolesMap = {}
 export async function getRoles() {
@@ -27,7 +29,11 @@ export async function getOrg(orgID) {
 }
 
 export async function getOrgUser(){
+    if(!auth.currentUser) {
+        return  false
+    }
     const docID = auth.currentUser.uid
+
     const orgUserRef = doc(db, "org_users", docID);
     const orgUserSnap = await getDoc(orgUserRef)
 
@@ -36,14 +42,17 @@ export async function getOrgUser(){
         const role = orgUserData["role"]
         const orgID = orgUserData["org_id"]
         let orgRoleData = {}
-        if (role !== 0) {
-            console.log("role", role, "org_id", orgID)
+        let org = {}
+        if (role !== 4) {
             const orgRoleRef = doc(db, "orgs", orgID, "roles", role.toString())
             const orgRoleSnap = await getDoc(orgRoleRef)
             orgRoleData = orgRoleSnap.data()
+            const orgRef = doc(db, "orgs", orgID)
+            const orgSnap = await getDoc(orgRef)
+            org = orgSnap.data()
         }
 
-        return {...orgUserData, roleData: orgRoleData}
+        return {...orgUserData, roleData: orgRoleData, org}
     }
     return false
 }
@@ -97,4 +106,72 @@ export async function updateUserRole(uid, updatedRole) {
         role: parseInt(updatedRole)
     })
     console.log("updated user", userDoc)
+}
+
+
+export async function getStyles() {
+    const stylesQuery = query(collection(db, "styles"))
+    const stylesSnapshot = await getDocs(stylesQuery)
+    console.log(stylesSnapshot.docs.map(d => ({...d.data(), id: d.id})))
+    return stylesSnapshot.docs.map(d => ({...d.data(), id: d.id}))
+}
+
+function uuidv4() {
+    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+}
+
+
+export async function fireTask(type, orgID, {count, prompt, refImage, extraParams}) {
+    const task = {
+        type,
+        created_at: new Date().toLocaleString(),
+        org_id: orgID,
+        status: "queued",
+    }
+
+
+    const taskID = uuidv4()
+    switch (type) {
+        case "text2img":
+            task.credits = 1 * count;
+            task.prompt = prompt.trim()
+            task.count = count
+            task.extra_params = extraParams;
+            break;
+        case "img2img":
+            task.credits = 2 * count;
+            task.ref_image = refImage;
+            task.count = count;
+            task.extra_params = extraParams;break;
+
+        case "upscale":
+            task.credits = 1 * count;
+            task.ref_image = refImage;
+            task.count = 1;
+            task.extra_params = extraParams;
+            break;
+        default:
+            console.log("invalid type")
+            return;
+    }
+
+        try {
+            await setDoc(doc(db, "tasks", taskID), task)
+        } catch (e) {
+            console.log(e,  task)
+        }
+
+//         Also insert to realtime db
+    task.firestore_id = taskID
+    await set(ref(realtimeDB, `tasks/${auth.currentUser.uid}`), task)
+}
+
+export async function getCurrentTasks(setTask) {
+    const taskRef = ref(realtimeDB, `tasks/${auth.currentUser.uid}`);
+    onValue(taskRef, (snapshot) => {
+        const data = snapshot.val()
+        setTask(data)
+    })
 }

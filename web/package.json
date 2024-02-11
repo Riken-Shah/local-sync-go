@@ -20,11 +20,13 @@
     "firebase-admin": "^12.0.0",
     "firebaseui": "^6.1.0",
     "framer-motion": "^10.16.16",
+    "image-diff": "^2.0.0",
     "lodash": "^4.17.21",
     "next": "^13.5.4",
     "next-firebase-auth": "^1.0.2",
     "postcss": "8.4.31",
     "react": "18.2.0",
+    "react-compare-image": "^3.4.0",
     "react-dom": "18.2.0",
     "react-firebaseui": "^6.0.0",
     "tailwindcss": "3.3.3"

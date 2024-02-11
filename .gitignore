@@ -13,3 +13,5 @@ config.ini
 #pyc
 scripts/__pycache__/
 scripts/*.pyc
+
+scripts/firebase_admin.json
