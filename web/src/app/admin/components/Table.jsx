@@ -50,8 +50,6 @@ export default function App({users, currentRole, currentUser}) {
 
     const headerColumns = React.useMemo(() => {
         if (visibleColumns === "all") return columns;
-
-        console.log(columns.filter((column) => Array.from(visibleColumns).includes(column.uid)))
         return columns.filter((column) => Array.from(visibleColumns).includes(column.uid));
     }, [visibleColumns]);
 

@@ -205,7 +205,6 @@ export function ImageGrid({ visibleImages, search, setVisibleImages, images, use
                        <Button variant="bordered" onPress={(e) => {
                             const tags = updatedTags.split(",")
                             tags.forEach((f) => f.trim())
-                            console.log(tags)
                             updateTags(photo_url, tags.length ? tags.filter((f) => f !== "") : [])
                           }}> Save </Button>
                         </div>
