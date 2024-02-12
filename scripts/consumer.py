@@ -15,11 +15,23 @@ firebase_admin.initialize_app(cred, {
 # Reference to the Realtime Database
 db_ref = db.reference('tasks')
 
+# Reference to the consumer count
+consumers_ref = db.reference('consumers')
+
 # Reference to Firestore
 firestore_db = firestore.client()
 
 # Reference to Firebase Storage
 bucket = storage.bucket()
+
+def increment_consumer_count():
+    current_count = consumers_ref.get()
+    if current_count is None:
+        current_count = 1
+    else:
+        current_count += 1
+    consumers_ref.set(current_count)
+    print(f"Consumer count incremented: {current_count}")
 
 def update_task_state(task_id, state):
     db_ref.child(task_id).update({'status': state})
