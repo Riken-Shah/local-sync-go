@@ -4,7 +4,7 @@ import {
     getDownloadURL,
     uploadString,
 } from "firebase/storage";
-import {storage} from "./firebase"
+import {auth, storage} from "./firebase"
 
 async function blobToDataURL(blob) {
     return new Promise((resolve, reject) => {
@@ -18,7 +18,10 @@ async function blobToDataURL(blob) {
 
 
 export async function fileUpload(user_id, filename, blob) {
-    const storageRef = ref(storage, `search/${user_id}/${filename}`);
+    if(!auth.currentUser) {
+        return
+    }
+    const storageRef = ref(storage, `search/${auth.currentUser.email}/${filename}`);
     const dataURL = await blobToDataURL(blob)
     return new Promise((resolve, reject) => {
         uploadString(storageRef, dataURL, "data_url").then(
