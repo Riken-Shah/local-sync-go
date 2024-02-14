@@ -149,12 +149,12 @@ func generateThumbnail(collectionName string, fpaths []string, thumbnailPath str
 			log.Println(fpath, "size is ", size/1e9)
 		}
 
-	}
+		err = f2.ThumbnailGeneratedCompleted(fpath)
+		if err != nil {
+			log.Println("err saving generated thumbnail, err: ", err)
+			return
+		}
 
-	err = f2.ThumbnailGeneratedCompleted(fpaths)
-	if err != nil {
-		log.Println("err saving generated thumbnail, err: ", err)
-		return
 	}
 
 	//	//
@@ -226,7 +226,7 @@ func GenerateThumbnails(collectionName string, thumbnailPath string) error {
 		var lastGB int64
 		st := time.Now()
 		xsSt := time.Now()
-		startFrom := 200
+		startFrom := 0
 		for i := startFrom; i < len(filePaths); i += chunkSize {
 			if i%maxChunks == 0 && i > 0 {
 				adjustedI := i - startFrom + 1

@@ -117,7 +117,7 @@ func FetchAllForGeneratingEmbedding(syncID string, skip, limit int) ([]File, err
 }
 
 func FetchAllForSync(syncID string, skip, limit int) ([]File, error) {
-	q := `SELECT * FROM files WHERE synced_to_vector_db = false LIMIT ? OFFSET ?;`
+	q := `SELECT * FROM files WHERE synced_to_vector_db = false AND thumbnail_generated = true   LIMIT ? OFFSET ?;`
 	rows, err := utils.DBClient.DBClient.Query(q, limit, skip)
 
 	if err != nil {
@@ -178,14 +178,15 @@ func DocumentsToRow(files []File) []Row {
 	return rows
 }
 
-func ThumbnailGeneratedCompleted(filePaths []string) error {
+func ThumbnailGeneratedCompleted(filePath string) error {
 
-	args := make([]interface{}, len(filePaths))
-	for i, v := range filePaths {
-		args[i] = v
-	}
+	// args := make([]interface{}, len(filePaths))
+	// for i, v := range filePaths {
+	// 	args[i] = v
+	// }
+	// fmt.Printf("fpath", filePath)
 
-	_, err := utils.DBClient.DBClient.Exec(`UPDATE files SET thumbnail_generated = 1 WHERE file_path IN (?`+strings.Repeat(", ?", len(args)-1)+`)`, args...)
+	_, err := utils.DBClient.DBClient.Exec(fmt.Sprintf("UPDATE files SET thumbnail_generated = 1 WHERE file_path = '%s'", filePath))
 	return err
 }
 
