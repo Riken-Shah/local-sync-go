@@ -7,6 +7,7 @@ import PIL
 
 class ImageCaption:
     def __init__(self, clip_model, clip_pre_process, cache_dir="", device="cpu"):
+        pass
         # config = Config(clip_model_name="ViT-L-14/openai", cache_path=cache_dir)
         # config = Config( cache_path=cache_dir, device=device)
         # config.clip_model = clip_model
