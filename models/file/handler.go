@@ -155,7 +155,7 @@ func DocumentsToRow(files []File) []Row {
 		hasher := sha1.New()
 		hasher.Write([]byte(file.FilePath))
 		hash := hex.EncodeToString(hasher.Sum(nil))
-		x := filepath.Join(".local\\thumbnails3", hash+".jpeg")
+		x := filepath.Join(".local", "thumbnails3", hash+".jpeg")
 		// fmt.Println("fikle", f)
 		// x := strings.TrimSuffix(filepath.Base(file.FilePath), path.Ext(file.FilePath)) + ".jpeg"
 		if _, ok := rmap[x]; ok {

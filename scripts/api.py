@@ -1,10 +1,6 @@
-# coding: utf-8
-import argparse
 import configparser
 from io import BytesIO
 from pathlib import Path, PurePosixPath
-import os
-
 import numpy as np
 import requests
 from PIL import Image
@@ -13,58 +9,51 @@ from flask_cors import CORS
 
 from sync import SyncDir
 
+config = configparser.ConfigParser()
+config.read("config.ini")
+
 IMAGES_PREFIX_URL = PurePosixPath('/images')
 THUMBS_PREFIX_URL = PurePosixPath('/thumb')
 MAX_TOP_N = 100
 ROUND_NUM = 1_000_000
 
 
-############ Helper functions ############
-
+# Helper functions
 def round_float(x):
-    # TODO: make round num work
-    return float(x)  # round(x * ROUND_NUM) / ROUND_NUM)
+    return float(x)
 
 
 def emb_to_list(emb):
     if emb.ndim == 2:
         assert emb.shape[0] == 1, 'Multidimension embedding: ' + str(emb.shape)
         emb = emb[0]
-
     return list(map(round_float, emb))
 
 
 def extract_keywords_without_quotes(input_string):
     keywords = []
-
     start_index = 0
     result_string = input_string
 
     while True:
-        # Find the next occurrence of double quotes
         start_quote = input_string.find('"', start_index)
-
         if start_quote == -1:
             break
 
-        # Find the end of the quoted string
         end_quote = input_string.find('"', start_quote + 1)
-
         if end_quote == -1:
             break
 
-        # Extract the content inside double quotes
         keywords_string = input_string[start_quote + 1:end_quote]
-
-        # Split the content by comma and remove leading/trailing whitespaces
         keywords.append([keyword.strip().lower() for keyword in keywords_string.split(',')])
-
         result_string = result_string.replace(keywords_string, "")
-
-        # Move the start_index to the next position after the current quoted string
         start_index = end_quote + 1
 
     return keywords, result_string.replace('"', "")
+
+
+# Flask app
+app = Flask(__name__)
 
 
 ################ Flask app ###############
@@ -155,8 +144,9 @@ def add_routes(app):
 
     @app.route(str(IMAGES_PREFIX_URL / '<path:path>'), methods=["GET", "POST"])
     def send_image(path):
-        print("path for image", path.replace('C:/Users/Aadi/Desktop/riken/local-sync-go/',""))
-        return send_from_directory("C:/Users/Aadi/Desktop/riken/local-sync-go/",  path.replace('C:/Users/Aadi/Desktop/riken/',""))
+        print("thumbnail_dir", config['server']['thumbnail_dir'], "path: ", path)
+        return send_from_directory(config['server']['thumbnail_dir'],
+                                   path)
 
     @app.route(str(THUMBS_PREFIX_URL / '<path:path>'))
     def send_thumb(path):
@@ -164,72 +154,22 @@ def add_routes(app):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--port', type=int, help='Port to start server', default=5000)
-    parser.add_argument('-s', '--host', type=str, help='Host to start server', default='0.0.0.0')
-    parser.add_argument('--dev', help='Start in dev mode', default=False, action='store_true')
-    parser.add_argument("--json-file", help="Path to JSON file")
-    parser.add_argument("--collection-name", help="Collection Name")
-    parser.add_argument("--milvus-uri", help="Milvus URI")
-    parser.add_argument("--milvus-username", help="Milvus Username")
-    parser.add_argument("--milvus-password", help="Milvus Password")
-    parser.add_argument("--cache-dir", help="Cache Dir", default="")
-    parser.add_argument("--emb-dir", help="Emb Dir", required=False)
-    args = parser.parse_args()
-    # rotation_invariant = args.rotation_invariant
+    cache_dir = config['server']['cache_dir']
+    SYNC_ENGINE = SyncDir(
+        config['server']['thumbnail_dir'],
+        collection_name="mvp1",
+        cache_dir=cache_dir,
+        milvus_uri=config['milvus']['uri'],
+        milvus_username=config['milvus']['user'],
+        milvus_password=config['milvus']['password'],
+        embedding_folder=config['server']['emb_dir'],
+        json_file=config['server']['json_file']
+    )
 
-    cfp = configparser.RawConfigParser()
-    # cfp.read("config.ini")
-    # root_path = cfp.get("milvus", "root_path")
-    # collection_name = cfp.get("milvus", "collection_name")
-    # img_dir = cfp.get("milvus", "img_dir")
-
-    app = Flask(
-        __name__,
-        static_folder=str('C:/Users/Aadi/Desktop/riken/'),
-        static_url_path="/static")
-
-
-    @app.route('/', methods=['GET', 'POST'])
-    def _proxy(*args, **kwargs):
-        resp = requests.request(
-            method=request.method,
-            url=request.url.replace(request.host_url, 'http//localhost:8000'),
-            headers={key: value for (key, value) in request.headers if key != 'Host'},
-            data=request.get_data(),
-            cookies=request.cookies,
-            allow_redirects=False)
-        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-        headers = [(name, value) for (name, value) in resp.raw.headers.items()
-                   if name.lower() not in excluded_headers]
-        response = Response(resp.content, resp.status_code, headers)
-        return response
-
-
-    # root_path = os.getenv("ROOT_PATH", root_path)
-    # collection_name = os.getenv("COLLECTION_NAME", collection_name)
-    # img_dir = os.getenv("IMG_DIR", img_dir)
-
-    # print("Root path: ", root_path)
-
-    cache_dir = os.getenv("CACHE_DIR", "./.cache")
-    SYNC_ENGINE = SyncDir("C:\\Users\\Aadi\\Desktop\\riken\\local-sync-go\\.local\\thumbnails3",
-                          # args.emb_dir, args.json_file,
-                          # collection_name=args.collection_name,
-                          # cache_dir=args.cache_dir,
-                          # milvus_uri=args.milvus_uri, milvus_username=args.milvus_username,
-                          # milvus_password=args.milvus_password)
-                          collection_name="mvp0",
-                          cache_dir="C:\\Users\\Aadi\\Desktop\\riken\\local-sync-go\\.cache",
-                          milvus_uri="https://in03-9e3738b111c9d0a.api.gcp-us-west1.zillizcloud.com",
-                          milvus_username="db_4e728d395bbf9d3",
-                          milvus_password="hQ9$w9F4Q6FyQry",
-                          embedding_folder="C:\\Users\\Aadi\\Desktop\\riken\\local-sync-go\\.local\\embds3",
-                          json_file="")
-
-    print(SYNC_ENGINE.milvus)
-    # SYNC_ENGINE.register_sync()
-    # CORS allow 3000
     CORS(app, resources={r"/*": {"origins": "*"}})
     add_routes(app)
-    app.run(host=args.host, port=args.port, debug=args.dev)
+    app.run(
+        host=config['server']['host'],
+        port=int(config['server']['port']),
+        debug=config.getboolean('server', 'dev')
+    )

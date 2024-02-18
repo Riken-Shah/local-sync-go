@@ -11,14 +11,13 @@ import (
 	"time"
 )
 
+var logsDir = filepath.Join(".local", "logs")
+
 const (
-	logsDir      = ".local\\logs"
-	timeFormat   = "2006-01-02 15X05"
+	timeFormat   = "2006-01-02T15:04:05Z07:00"
 	logFilePerm  = 0666
 	syncFilePath = ".local/last_synced.json"
 )
-
-var logfilePath = filepath.Join(".", logsDir)
 
 type SyncInfo struct {
 	IsRunning    bool      `json:"is_running"`
