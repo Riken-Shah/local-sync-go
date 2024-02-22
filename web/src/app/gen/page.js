@@ -70,13 +70,13 @@ export default function App() {
         if(activeTask && activeTask.type) {
                     setSelectedKey(activeTask.type)
         }
-        setIsDisabled(!(activeTask && (activeTask.status === "completed" || activeTask.status === "failed") && orgUser.org.credits > 0))
+        // setIsDisabled(!(activeTask && (activeTask.status === "completed" || activeTask.status === "failed") && orgUser.org.credits > 0))
           getOrgUser().then((orgUsers) => setOrgUser(orgUsers))
     }, [activeTask])
 
     useEffect(() => {
         if(!orgUser?.org?.credits) {
-            setIsDisabled(true)
+            // setIsDisabled(true)
         }
     }, [orgUser?.org?.credits]);
 
