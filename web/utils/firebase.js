@@ -40,7 +40,9 @@ export const realtimeDB = getDatabase(app)
 
 let analyticsEnabled = false
 
-export const toggleAnalytics = (enabled) => analyticsEnabled = Boolean(enabled)
+export const toggleAnalytics = (enabled) => {
+    analyticsEnabled = Boolean(enabled)
+}
 
 export const sendLog = (name, obj) => {
     if (!analyticsEnabled) {

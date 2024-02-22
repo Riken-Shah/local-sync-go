@@ -47,7 +47,7 @@ export default function App() {
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 const devUsers = ["rikenshah.02@gmail.com", "rikenshah2002@gmail.com"];
-                toggleAnalytics(!devUsers.includes(user.email))
+                // toggleAnalytics(!devUsers.includes(user.email))
 
                 (async function () {
                     const styles = await getStyles();
