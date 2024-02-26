@@ -187,7 +187,7 @@ function Home() {
 
     useEffect(() => {
         if (typeof window !== 'undefined' && window.localStorage) {
-            const liveAPI = "https://d5cb-122-187-218-226.ngrok-free.app";
+            const liveAPI = "https://7844-122-187-218-226.ngrok-free.app";
             // // let inferenceAPI = localStorage.getItem('inferenceAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
             // // let imageAPI = localStorage.getItem('imageAPI') || "https://wrn6yr-ip-122-187-218-226.tunnelmole.net";
             setInferenceAPI(liveAPI);
