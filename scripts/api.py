@@ -157,7 +157,7 @@ if __name__ == '__main__':
     cache_dir = config['server']['cache_dir']
     SYNC_ENGINE = SyncDir(
         config['server']['thumbnail_dir'],
-        collection_name="mvp1",
+        collection_name="mvp0",
         cache_dir=cache_dir,
         milvus_uri=config['milvus']['uri'],
         milvus_username=config['milvus']['user'],
